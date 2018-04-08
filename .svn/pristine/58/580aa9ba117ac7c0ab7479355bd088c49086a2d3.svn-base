@@ -1,0 +1,184 @@
+﻿using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.Chapters;
+using DataStoreProject.Model.ViewModel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class WebCourseController : StationBaseApiController
+    {
+        WebCourseMapper mapper = new WebCourseMapper();
+        /// <summary>
+        /// 获取课程列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetCourseList(W_CourseModel model)
+        {
+            return Success(mapper.GetCourseList(model, this.System_Station_ID), model.PageIndex == 1 ? mapper.GetCourseListTotalCount(model, this.System_Station_ID) : 0);
+        }
+
+        /// <summary>
+        /// 禁用启用网课
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic UpdateCourseValid(CampusModel model)
+        {
+            return Success(mapper.UpdateCourseValid(model, this.System_Station_ID));
+        }
+
+
+        /// <summary>
+        /// 删除网课及对应的关系表
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteCourse(CampusModel model)
+        {
+            return Success(mapper.DeleteCourse(model, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 上架下架网课
+        /// </summary>
+        /// <returns></returns>
+
+        [HttpPost]
+        public dynamic UpdateCourseIsPutaway(CampusModel model)
+        {
+            return Success(mapper.UpdateCourseIsPutaway(model, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 添加修改网课单元
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SaveCourse_Unit_ClassTime(W_Course_Unit_ClassTime Model)
+        {
+            return Success(mapper.SaveCourse_Unit_ClassTime(Model, this.System_Station_ID, this.AccountID));
+        }
+
+        /// <summary>
+        /// 根据网课id 查找对应数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetCourseByID(int ID)
+        {
+            return Success(mapper.GetCourseByID(ID, this.System_Station_ID, this.StuId));
+        }
+
+        /// <summary>
+        /// 根据对应条件查询资料数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetDataInfoList(DataInfoModel model)
+        {
+            return Success(mapper.GetDataInfoList(model, this.System_Station_ID), model.PageIndex == 1 ? mapper.GetDataInfoListTotalCount(model, this.System_Station_ID) : 0);
+        }
+        /// <summary>
+        /// 添加修改 网课 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SaveCourse(W_Course model)
+        {
+            return Success(mapper.SaveCourse(model, this.System_Station_ID, this.AccountID));
+        }
+
+        /// <summary>
+        /// 查询网课对应的单元数据  包含单元下课次
+        /// </summary>
+        /// <returns></returns>
+        public dynamic GetCourse_UnitNodeList(W_Course_Unit Model)
+        {
+            return Success(mapper.GetCourse_UnitNodeList(Model, this.System_Station_ID));
+        }
+        /// <summary>
+        /// 删除单元及对应的关系表
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <returns></returns>
+
+        [HttpPost]
+        public dynamic DeleteCourseUnit(W_Course_Unit Model)
+        {
+
+            return Success(mapper.DeleteCourseUnit(Model, this.System_Station_ID));
+        }
+        /// <summary>
+        /// 添加修改网课单元
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SaveCourse_Unit(W_Course_Unit Model)
+        {
+            return Success(mapper.SaveCourse_Unit(Model, this.System_Station_ID, this.AccountID));
+        }
+
+        /// <summary>
+        /// 删除单元及对应的关系表
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteCourseUnitClassTime(W_Course_Unit_ClassTime Model)
+        {
+
+            return Success(mapper.DeleteCourseUnitClassTime(Model, this.System_Station_ID));
+            
+        }
+        [HttpPost]
+        /// <summary>
+        /// 添加修改网课章节
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <returns></returns>
+        public dynamic SaveCourse_Chapters(W_Course_Chapters Model)
+        {
+            return Success(mapper.SaveCourse_Chapters(Model, this.System_Station_ID, this.AccountID));
+        }
+
+        [HttpGet]
+        /// <summary>
+        /// 根据网课id查找对应的章节  分子父节点
+        /// </summary>
+        /// <returns></returns>
+
+        public dynamic GetCourse_ChaptersNodeList(W_Course_Chapters model)
+        {
+            return Success(mapper.GetCourse_ChaptersNodeList(model, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 删除网课章节及对应的关系表
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteCourseChapters(W_Course_Chapters Model)
+        {
+            return Success(mapper.DeleteCourseChapters(Model, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 根据网课单元课次id 查找对应数据 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetCourseUnitClassTimeByID(int ID)
+        {
+            return Success(mapper.GetCourseUnitClassTimeByID(ID, this.System_Station_ID));
+        }
+    }
+}

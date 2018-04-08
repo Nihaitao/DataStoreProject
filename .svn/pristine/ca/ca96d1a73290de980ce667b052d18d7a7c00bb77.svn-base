@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetCourseListTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetCourseList_Fragment"></include>
+    </select>
+    <select id="GetCourseList" resultClass="map" parameterClass="map">
+      select  *,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,
+      (select Name from w_discipline as b where a.Discipline_ID=b.ID) as Discipline_Name,
+      (select ti.Name from t_teacherinfo_detail as t inner JOIN t_teacherinfo ti on t.Teacher_ID=ti.ID where t.ID=a.TeacherDetail_ID) as TeacherDetail_Name,
+      (select count(ID) AS IsShiT from w_course_chapters where Course_ID=a.ID and cid>0 and IsOpen=2 and valid=1) as IsShiT
+      <include refid ="GetCourseList_Fragment"></include>
+    </select>
+
+    <sql id="GetCourseList_Fragment">
+      from  W_Course  as a where  System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="0" prepend="and" property="TeachingMethod">
+        TeachingMethod = #TeachingMethod#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="Discipline_ID">
+        Discipline_ID in (SELECT ID FROM w_discipline WHERE FIND_IN_SET(ID,GetChildList(#Discipline_ID#,'w_discipline')))
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        Valid=#Valid#
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="IsPutaway">
+        IsPutaway=#IsPutaway#
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="IsRecommend">
+        IsRecommend=#IsRecommend#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Name">
+        a.Name like concat('%',#Name#,'%')
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="StuID">
+        a.ID not in ( select ob.Course_ID  from  w_order as oa inner join w_order_detail as ob  on  oa.id=ob.CID  where oa.StuId=#StuID#  and oa.System_Station_ID=#System_Station_ID# and ob.IsDelete = 0)
+      </isNotEmpty>
+      order by  valid desc,AddTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetCourseOrderCount" resultClass="int" parameterClass="map">
+      select count(*) as counts from w_order_detail o left join w_course c on c.ID=o.Course_ID where c.ID=#ID#
+    </select>
+
+    <delete id="DeleteCourse" parameterClass="map" >
+      delete  from W_Course_unit_classtime   where   Unit_ID in  ( select ID from  W_Course_unit  where  Course_ID=#ID# ) and System_Station_ID=#System_Station_ID#
+    </delete>
+
+
+    <select id="GetCourseByID" resultClass="DataStoreProject.Model.Entity.Chapters.W_CourseModel" parameterClass="map">
+      select  *,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,(select Name from w_discipline as b where a.Discipline_ID=b.ID) as Discipline_Name,(select ti.Name from t_teacherinfo_detail as t inner JOIN t_teacherinfo ti on t.Teacher_ID=ti.ID where t.ID=a.TeacherDetail_ID) as TeacherDetail_Name,(select COUNT(0) from  w_order as oa inner join w_order_detail as ob on oa.ID=ob.CID where oa.StuId=#StuID#  and ob.Course_ID=a.ID and oa.System_Station_ID=#System_Station_ID# and oa.PayStatus=1 and ob.IsDelete = 0) as IsPay,(select COUNT(0) from  w_order as oa inner join w_order_detail as ob on oa.ID=ob.CID where  ob.Course_ID=a.ID and oa.System_Station_ID=#System_Station_ID# and oa.PayStatus=1 ) as BuyCount,(select COUNT(0) from  w_course_chapters as wcc  where wcc.Course_ID=a.ID and wcc.CID>0 ) as CourseCount   from  W_Course  as a where ID=#ID#  and  System_Station_ID=#System_Station_ID#
+    </select>
+
+
+    <select id="GetDataInfoListTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetDataInfoList_Fragment"></include>
+    </select>
+    <select id="GetDataInfoList" resultClass="map" parameterClass="map">
+      select  *,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,
+      (select Name from w_discipline as b where a.Discipline_ID=b.ID) as Discipline_Name   
+      <include refid ="GetDataInfoList_Fragment"></include>
+    </select>
+
+    <sql id="GetDataInfoList_Fragment">
+      from  W_DataInfo  as a where  System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="0" prepend="and" property="DataInfoType">
+        DataInfoType = #DataInfoType#
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="IsOpen">
+        IsOpen=#IsOpen#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="Course_ID">
+        Course_ID=#Course_ID#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="CourseChapters_ID">
+        CourseChapters_ID=#CourseChapters_ID#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="CourseUnit_ID">
+        CourseUnit_ID=#CourseUnit_ID#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="CourseUnitClassTime_ID">
+        CourseUnitClassTime_ID=#CourseUnitClassTime_ID#
+      </isGreaterThan>
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetExsitWebCourse" resultClass="int" parameterClass="map">
+      select ID as Counts from  W_Course   where 1=1  and  Name=#Name#  and  System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="0" prepend="and" property="ID">
+        ID!=#ID#
+      </isGreaterThan>
+    </select>
+    
+    <select id="GetCourse_UnitList" resultClass="DataStoreProject.Model.ViewModel.Course_UnitModel" parameterClass="map">
+      select  a.*,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,c.Name as  Course_Name   from  W_Course_Unit as a  inner join w_course as c on a.Course_ID=c.ID  where 1=1  
+      and  a.Course_ID=#Course_ID#  and a.System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        a.Valid=#Valid#
+      </isGreaterThan>
+    </select>
+
+    <select id="SelectCourse_Unit" resultClass="DataStoreProject.Model.ViewModel.Course_UnitModel" parameterClass="map">
+      select  a.*,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,c.Name as  Course_Name   from  W_Course_Unit as a  inner join w_course as c on a.Course_ID=c.ID  where 1=1
+      and  a.ID=#ID#  and a.System_Station_ID=#System_Station_ID#
+    </select>
+
+    <select id="GetCourseUnitClassTimeList" resultClass="DataStoreProject.Model.Entity.Chapters.W_Course_Unit_ClassTime" parameterClass="map">
+      select  a.*,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,c.Name as Unit_Name,(select ti.Name from t_teacherinfo_detail as t inner JOIN t_teacherinfo ti on t.Teacher_ID=ti.ID where t.ID=a.TeacherDetail_ID) as TeacherDetail_Name,(select Name from w_classroom as b where a.ClassRoom_ID=b.ID) as ClassRoom_Name   from   
+      W_Course_Unit_ClassTime  as a  inner join  w_course_unit as c on a.Unit_ID=c.ID  where  a.System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="0" prepend="and" property="ID">
+        a.Unit_ID=#ID#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="UnitIDS">
+        a.Unit_ID in ($UnitIDS$)
+      </isNotEmpty>
+      <isGreaterThan compareValue="0" prepend="and" property="Valid">
+        a.Valid=#Valid#
+      </isGreaterThan>
+    </select>
+
+    <select id="GetCourse_ChaptersList" resultClass="DataStoreProject.Model.ViewModel.Course_ChaptersModel" parameterClass="map">
+      select  a.*,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,c.Name as Course_Name,(select Name from w_courseware as b where a.CourseWare_ID=b.ID) as CourseWare_Name,(select count(0) from  w_course_look  as cl where cl.CourseChapters_ID=a.ID and cl.StuId=#StuId# ) as IsLook   from  W_Course_chapters  as a inner join w_course as c on a.Course_ID=c.ID where a.System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="0" prepend="and" property="Course_ID">
+        a.Course_ID=#Course_ID#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="CID">
+        a.CID=#CID#
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        a.Valid=#Valid#
+      </isGreaterThan>
+    </select>
+
+    <select id="GetCourseUnitClassTimeByID" resultClass="DataStoreProject.Model.Entity.Chapters.W_Course_Unit_ClassTime" parameterClass="map">
+      select  a.*,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,c.Name as Unit_Name,(select ti.Name from t_teacherinfo_detail as t inner JOIN t_teacherinfo ti on t.Teacher_ID=ti.ID where t.ID=a.TeacherDetail_ID) as TeacherDetail_Name,(select Name from w_classroom as b where a.ClassRoom_ID=b.ID) as ClassRoom_Name    from  W_Course_Unit_ClassTime as a   inner join  w_course_unit as c on a.Unit_ID=c.ID  where a.ID=#ID#  and  a.System_Station_ID=#System_Station_ID#
+    </select>
+
+    <select id="GetCourseLookInfo" resultClass="map" parameterClass="map">
+      select d.`Name`,d.TotalHours,d.CoverPath,e.`Name` as Teacher,e.JobTitle,SUM(TIMESTAMPDIFF(MINUTE,a.AddTime,a.EndTime)) as LearnTimes,left(a.AddTime,10) as LookDate, c.`Name` as WareName,
+      (select count(1) from w_course_look where StuId = #StuId# and LookTime <![CDATA[ <= ]]> a.EndTime and CourseChapters_ID in
+      (select ID from w_course_chapters where Course_ID = d.ID)) as LookHours
+      from w_course_look_detail a join w_course_chapters b on a.CourseChapters_ID = b.ID
+      left join w_courseware c on c.ID = b.CourseWare_ID
+      join w_course d on d.ID = b.Course_ID
+      left join w_teacher e on d.TeacherDetail_ID = e.ID
+      where b.System_Station_ID = #System_Station_ID# and a.StuId = #StuId#
+      GROUP BY DATE_FORMAT(a.AddTime,'%m-%d-%Y'),d.ID order by a.AddTime desc;
+    </select>
+  </statements>
+</sqlMap>

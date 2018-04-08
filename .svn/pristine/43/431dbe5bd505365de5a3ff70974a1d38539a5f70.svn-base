@@ -1,0 +1,134 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
+using CommonFramework;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet.SqlMap;
+using CommonFramework.Mvc;
+using CommonFramework.Mvc.Attribute;
+using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.DataInfo;
+namespace DataStoreProject.Web.Controller
+{
+    public class ChaptersController : StationBaseApiController
+    {
+        ChaptersMapper mapper = new ChaptersMapper();
+
+        /// <summary>
+        /// 获取全部章节列表根据题库ID by SZF
+        /// </summary>
+        /// <param name="ID">题库ID</param>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetChaptersList(int ID)
+        {
+
+            var model = mapper.GetChaptersList(ID);
+            return Success(model, model.Count);
+        }
+        /// <summary>
+        /// 添加章节列表 by SZF
+        /// </summary>
+        /// <param name="model">W_Chapters</param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddChapters(W_Chapters model)
+        {
+            if (model != null)
+            {
+                model.AddPerson = this.AccountID;
+                model.AddTime = DateTime.Now.ToString();
+                ChaptersMapper mapper = new ChaptersMapper();
+                var dict = mapper.AddChapters(model);
+                if (dict)
+                    return Success("操作成功");
+                else
+                    return Success("操作失败");
+            }
+            else
+            {
+                return Success("操作失败");
+            }
+        }
+
+        /// <summary>
+        /// 修改章节列表 by SZF
+        /// </summary>
+        /// <param name="model">W_Chapters</param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic UpdateChapters(W_Chapters model)
+        {
+            if (model != null)
+            {
+
+                if (mapper.UpdateChapters(model))
+                    return Success("操作成功");
+                else
+                    return Success("操作失败");
+            }
+            else
+            {
+                return Success("操作失败");
+            }
+        }
+
+        /// <summary>
+        /// 根据ID删除章节列表
+        /// </summary>
+        /// <param name="ID">主键ID</param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteChapters(int ID)
+        {
+
+            if (mapper.DeleteChapters(ID))
+                return Success("操作成功");
+            else
+                return Success("操作失败");
+        }
+        /// <summary>
+        /// 根据ID和Valid启用状态修改状态，反回int类型的修改行数
+        /// </summary>
+        /// <param name="ID">主键ID</param>
+        /// <param name="Valid">启用禁用</param>
+        /// <returns></returns>
+        [HttpPost]
+        public int Enabledisable(int ID, int Valid)
+        {
+
+            return Success(mapper.Enabledisable(ID, Valid));
+
+        }
+
+
+
+
+        #region 章节题目 created by nht  2017-11-08
+
+        /// <summary>
+        /// 章节选择题目
+        /// </summary>
+        /// <param name="chapterId">章节ID</param>
+        /// <param name="questionIds">题目ID</param>
+        /// <author>nht</author>
+        /// <date>2017-11-08</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic CheckChaptersQuestion(int chapterId, string questionIds)
+        {
+            return Success(mapper.CheckChaptersQuestion(chapterId, questionIds) ? "操作成功" : "操作失败");
+        }
+
+        [HttpGet]
+        public dynamic GetCharptersQuestion(int chapterId) 
+        {
+            return Success(mapper.GetChaptersQuestion(chapterId));
+        }
+        #endregion
+    }
+}

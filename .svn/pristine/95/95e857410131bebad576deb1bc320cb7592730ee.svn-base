@@ -1,0 +1,51 @@
+﻿using ServiceStack.DataAnnotations;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataStoreProject.Model.Entity.Question
+{
+    /// <summary>
+    /// by SZF
+    /// </summary>
+    public class W_QuestionerrorCorrection
+    {
+        /// <summary>
+        /// 纠错表
+        /// </summary>
+        [PrimaryKey,AutoIncrement]
+        public int ID { get; set; }
+
+        /// <summary>
+        /// 题目ID
+        /// </summary>
+        public int Question_ID { get; set; }
+
+        /// <summary>
+        ///1   错别字  2 答案有误 3 题目不完整 4  图片模糊 5   解析不正确 6 其他错误
+        /// </summary>
+        public int ErrorType { get; set; }
+
+        /// <summary>
+        /// 内容
+        /// </summary>
+        public string Remart { get; set; }
+
+        /// <summary>
+        /// 添加人
+        /// </summary>
+        public string StuID { get; set; }
+
+        /// <summary>
+        /// 添加时间
+        /// </summary>
+        public DateTime AddTime { get; set; }
+
+        /// <summary>
+        /// 状态，0 未处理 1 已处理
+        /// </summary>
+        public int Valid { get; set; }
+    }
+}

@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+
+    <select id="GetQuestionTypeList" resultClass="map" parameterClass="map">
+      select * from w_questiontype;
+    </select>
+
+    <select id="GetQuestionStoreById" resultClass="map" parameterClass="map">
+      select * from w_questionstore where ID = #id#
+    </select>
+
+    <select id="GetQuestionStoreList" resultClass="map" parameterClass="map">
+      select a.*,b.Name as AddPersonName,c.Name as DisciplineName
+      <include refid ="GetQuestionStore_Fragment"></include>
+    </select>
+
+    <select id="GetQuestionStoreCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetQuestionStore_Fragment"></include>
+    </select>
+    <sql id="GetQuestionStore_Fragment">
+      from w_questionstore a
+      left join h_station_account b on a.AddPerson = b.Account_ID
+      left join w_discipline c on a.Discipline_ID = c.ID where a.IsDelete = 0 and a.system_station_id = #stationId#
+      <isNotEmpty prepend="and" property="name">
+        a.Name like concat('%',#name#,'%')
+      </isNotEmpty>
+      <isGreaterThan compareValue="-1" prepend="and" property="valid">
+        a.Valid=#valid#
+      </isGreaterThan>
+      <isNotEqual compareValue="0" prepend="and" property="disciplineId">
+        a.Discipline_ID=#disciplineId#
+      </isNotEqual>
+      order by a.Valid desc, a.ID desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <update id="UpdateQuestionData" parameterClass="map">
+      update w_questiondata set Content = #content# where ID = #id#
+    </update>
+
+    <delete id="DeleteQuestion" parameterClass="map">
+      delete from w_question where ID = #id#
+    </delete>
+
+    <delete id="DeleteQuestionData" parameterClass="map">
+      delete from w_questiondata where ID = #id#;
+      delete from w_question where QuestionData_ID = #id#;
+    </delete>
+
+    <select id="GetQuestion" resultClass="map" parameterClass="map">
+      select a.*,b.Name as AddPersonName,c.Name as QuestionStoreName, d.Name as QuestionTypeName from w_question a
+      left join h_station_account b on a.AddPerson = b.Account_ID
+      left join w_questionstore c on a.QuestionStore_ID = c.ID
+      left join w_questiontype d on a.QuestionType_ID = d.ID
+      where a.ID = #id#
+    </select>
+
+
+    <select id="GetQuestionData" resultClass="map" parameterClass="map">
+      select a.*,b.Name as AddPersonName,c.Name as QuestionStoreName, d.Name as QuestionTypeName,
+      (select Content from w_questiondata where ID = a.QuestionData_ID) Content
+      from w_question a
+      left join h_station_account b on a.AddPerson = b.Account_ID
+      left join w_questionstore c on a.QuestionStore_ID = c.ID
+      left join w_questiontype d on a.QuestionType_ID = d.ID
+      where a.QuestionData_ID = (select QuestionData_ID from w_question where ID = #id#)
+    </select>
+
+
+    <select id="GetQuestionList" resultClass="map" parameterClass="map">
+      select a.*,b.Name as AddPersonName,c.Name as QuestionStoreName, d.Name as QuestionTypeName
+      <include refid ="GetQuestion_Fragment"></include>
+    </select>
+
+    <select id="GetQuestionTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetQuestion_Fragment"></include>
+    </select>
+    <sql id="GetQuestion_Fragment">
+      from w_question a
+      left join h_station_account b on a.AddPerson = b.Account_ID
+      left join w_questionstore c on a.QuestionStore_ID = c.ID
+      left join w_questiontype d on a.QuestionType_ID = d.ID
+      <dynamic prepend="where">
+        <isNotEmpty prepend="and" property="title">
+          a.Title like concat('%',#title#,'%')
+        </isNotEmpty>
+        <isGreaterThan compareValue="0" prepend="and" property="type">
+          a.QuestionType_ID=#type# and a.QuestionData_ID = 0
+        </isGreaterThan>
+        <isGreaterThan compareValue="0" prepend="and" property="store">
+          a.QuestionStore_ID=#store#
+        </isGreaterThan>
+        <isGreaterThan compareValue="0" prepend="and" property="level">
+          a.Level=#level#
+        </isGreaterThan>
+      </dynamic>
+      order by a.ID desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetQuestionNoteList" resultClass="map" parameterClass="map">
+      select * from w_questionnote
+      <dynamic prepend="where">
+        <isNotEmpty prepend="and" property="StuID">
+          `StuID`=#StuID#
+        </isNotEmpty>
+        <isNotEmpty prepend="and" property="Question_ID">
+          `Question_ID`=#Question_ID#
+        </isNotEmpty>
+      </dynamic>
+    </select>
+
+    <select id="QuestionHasBeenUsed" resultClass="int" parameterClass="map">
+      select (select count(1) from w_chapter_question where Question_ID = #id#) + (select count(1) from w_exampaperdetail_detail where Question_ID = #id#) as count
+    </select>
+  </statements>
+</sqlMap>

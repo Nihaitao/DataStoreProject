@@ -1,0 +1,220 @@
+﻿using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using DataStoreProject.Model.Entity.Question;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using ServiceStack.OrmLite;
+
+namespace DataStoreProject.Business
+{
+    public class QuestionMapper : BaseMapper
+    {
+        /// <summary>
+        /// 获取题型列表
+        /// </summary>
+        /// <returns></returns>
+        public IList GetQuestionTypeList()
+        {
+            return QueryForList("GetQuestionTypeList", null);
+        }
+
+        /// <summary>
+        /// 添加题库
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool AddQuestionStore(W_QuestionStore model)
+        {
+            if (string.IsNullOrEmpty(model.Name))
+            {
+                throw new ApiException("题库名称不能为空");
+            }
+            return Orm.Insert(model, true) > 0;
+        }
+
+        /// <summary>
+        /// 获取题库信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public W_QuestionStore GetQuestionStore(int id)
+        {
+            W_QuestionStore model = Orm.Select<W_QuestionStore>(x => x.ID == id && x.IsDelete == 0).FirstOrDefault();
+            if (model == null)
+                throw new ApiException("题库不存在或者已删除");
+            return model;
+        }
+
+        /// <summary>
+        /// 修改题库信息
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool UpdateQuestionStore(W_QuestionStore model)
+        {
+            return Orm.Update(model) > 0;
+        }
+
+        /// <summary>
+        /// 获取题库
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public IList GetQuestionStoreById(int id)
+        {
+            return QueryForList("GetQuestionStoreById", new { id });
+        }
+
+        /// <summary>
+        /// 获取题库列表
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="valid"></param>
+        /// <param name="disciplineId"></param>
+        /// <returns></returns>
+        public IList GetQuestionStoreList(string name, int valid, int disciplineId, int stationId)
+        {
+            return QueryForList("GetQuestionStoreList", new { name, valid, disciplineId, stationId });
+        }
+
+
+        /// <summary>
+        /// 添加题目
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool AddQuestion(W_Question model)
+        {
+            if (string.IsNullOrEmpty(model.Title))
+            {
+                throw new ApiException("题目名称不能为空");
+            }
+            return Orm.Insert(model, true) > 0;
+        }
+
+        /// <summary>
+        /// 添加组合题材料
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool AddQuestionData(W_QuestionData model)
+        {
+            return Orm.Insert(model, true) > 0;
+        }
+
+        /// <summary>
+        /// 修改题目
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool UpdateQuestion(W_Question model)
+        {
+            return Orm.Update(model) > 0;
+        }
+
+        /// <summary>
+        /// 修改组合题材料
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        public bool UpdateQuestionData(int id, string content)
+        {
+            return SqlMapper.Update("UpdateQuestionData", new { id, content }) > 0;
+        }
+
+
+        /// <summary>
+        /// 删除题目
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool DeleteQuestion(int id)
+        {
+            return SqlMapper.Delete("DeleteQuestion", new { id }) > 0;
+        }
+
+        /// <summary>
+        /// 删除组合题
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool DeleteQuestionData(int id)
+        {
+            return SqlMapper.Delete("DeleteQuestionData", new { id }) > 0;
+        }
+
+        /// <summary>
+        /// 获取题目信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public IList GetQuestion(int id)
+        {
+            return QueryForList("GetQuestion", new { id });
+        }
+
+        /// <summary>
+        /// 获取题目列表信息
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="type"></param>
+        /// <param name="store"></param>
+        /// <param name="level"></param>
+        /// <returns></returns>
+        public IList GetQuestionList(string title, int type, int store, int level)
+        {
+            return QueryForList("GetQuestionList", new { title, type, store, level });
+        }
+
+        /// <summary>
+        /// 获取组合题信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public IList GetQuestionData(int id)
+        {
+            return QueryForList("GetQuestionData", new { id });
+        }
+
+        /// <summary>
+        /// 根据学生ID获取笔记列表
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public IList GetQuestionNoteList(string StuID, int Question_ID)
+        {
+            return QueryForList("GetQuestionNoteList", new { StuID, Question_ID });
+        }
+
+        /// <summary>
+        /// 添加笔记
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool AddQuestionNote(W_QuestionNote model)
+        {
+            using (var session = OpenOrmSession())
+            {
+                return session.Insert(model, true) > 0;
+            }
+        }
+
+        /// <summary>
+        /// 添加纠错
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool AddQuestionerrorCorrection(W_QuestionerrorCorrection model)
+        {
+            using (var session = OpenOrmSession())
+            {
+                return session.Insert(model, true) > 0;
+            }
+        }
+    }
+}

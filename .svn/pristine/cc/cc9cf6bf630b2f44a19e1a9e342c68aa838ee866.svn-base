@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="DemoMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    
+    <select id="selectDatainfo" resultClass="map" parameterClass="map">
+      SELECT d.*,h.`Name` as AddPersonName from w_datainfo d LEFT JOIN h_station_account h on d.AddPerson=h.Account_ID
+      where d.System_Station_ID=#System_Station_ID# and BusType = 0 and BusID = #CourseID#
+
+    </select>
+    
+   
+  </statements>
+</sqlMap>

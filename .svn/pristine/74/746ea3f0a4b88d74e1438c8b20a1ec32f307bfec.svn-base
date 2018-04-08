@@ -1,0 +1,103 @@
+﻿using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using DataStoreProject.Model.ViewModel;
+using Entites.PolyvInfo;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataStoreProject.Business
+{
+    public class PolyvInfoMapper : BaseMapper
+    {
+        /// <summary>
+        /// 读取视频配置数据 hx add 20171205
+        /// </summary>
+        /// <param name="System_Station_ID"></param>
+        /// <returns></returns>
+        public PolyvInfoModel GetPolyvSetByWhere(int System_Station_ID)
+        {
+            PolyvInfoModel model= SqlMapper.QueryForObject<PolyvInfoModel>("GetPolyvSetByWhere", new { System_Station_ID = System_Station_ID });
+            if (model == null)
+            {
+                throw new ApiException("资源上传目录未设置，请先设置！");
+            }
+            else
+            {
+                if (model.Valid == 0)
+                {
+                    throw new ApiException("资源上传设置未开启，请先开启！");
+                }
+            }
+            return model;
+        }
+
+        /// <summary>
+        /// 根据条件查询主表
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <returns></returns>
+        public W_PolyvInfo GetPolyvInfoByWhere(int System_Station_ID)
+        {
+           return SqlMapper.QueryForObject<W_PolyvInfo>("GetPolyvInfoByWhere", new { System_Station_ID = System_Station_ID });
+        }
+
+       
+
+        public string doGet(string Url)
+        {
+            try
+            {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(Url);
+                request.Method = "GET";
+                request.ContentType = "text/html;charset=UTF-8";
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                Stream myResponseStream = response.GetResponseStream();
+                StreamReader myStreamReader = new StreamReader(myResponseStream, Encoding.GetEncoding("utf-8"));
+                string retString = myStreamReader.ReadToEnd();
+                myStreamReader.Close();
+                myResponseStream.Close();
+                return retString;
+            }
+            catch (Exception ce)
+            {
+                throw ce;
+            }
+        }
+
+
+        private long GenerateTimeStamp()
+        {
+            var startTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1, 0, 0, 0, 0));
+            var t = (DateTime.Now.Ticks - startTime.Ticks) / 10000; //除10000调整为13位        
+            return t;
+        }
+
+        private string EncryptToSHA1(string str)
+        {
+            using (var sha1 = new SHA1CryptoServiceProvider())
+            {
+                byte[] dataToHash = Encoding.UTF8.GetBytes(str);
+                byte[] dataHashed = sha1.ComputeHash(dataToHash);
+                return BitConverter.ToString(dataHashed).Replace("-", "");
+            }
+            ;
+        }
+
+        public string EncryptToMD5(string str)
+        {
+            using (var md5 = MD5.Create())
+            {
+                byte[] dataToHash = Encoding.UTF8.GetBytes(str);
+                byte[] dataHashed = md5.ComputeHash(dataToHash);
+                return BitConverter.ToString(dataHashed).Replace("-", "");
+            }
+        }
+    }
+}

@@ -1,0 +1,272 @@
+﻿using CT.Common.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using DataStoreProject.Business;
+using System.Web.Http;
+using DataStoreProject.Model.Entity.ExamPaper;
+using DataStoreProject.Model.ViewModel;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class ExamPaperController : StationBaseApiController
+    {
+        ExamPaperMapper mapper = new ExamPaperMapper();
+
+
+        #region 试卷  created by nht    2017-11-2
+
+        /// <summary>
+        /// 添加试卷信息
+        /// </summary>
+        /// <param name="model"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddExamPaper(W_ExamPaper model)
+        {
+            bool flag = false;
+            if (model != null)
+            {
+                model.System_Station_ID = this.System_Station_ID;
+                model.AddPerson = this.AccountID;
+                model.AddTime = DateTime.Now;
+                flag = mapper.AddExamPaper(model);
+            }
+            return Success(flag ? "操作成功" : "操作失败");
+        }
+
+
+        /// <summary>
+        /// 添加试卷题型
+        /// </summary>
+        /// <param name="model"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddExamPaperDetail(W_ExamPaperDetail model)
+        {
+            bool flag = false;
+            if (model != null && model.ExamPaper_ID > 0)
+            {
+                flag = mapper.AddExamPaperDetail(model);
+            }
+            return Success(flag ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 修改试卷信息
+        /// </summary>
+        /// <param name="model"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic UpdateExamPaper(W_ExamPaper model)
+        {
+            bool flag = false;
+            if (model != null && model.ID > 0)
+            {
+                flag = mapper.UpdateExamPaper(model);
+            }
+            return Success(flag ? "操作成功" : "操作失败");
+        }
+
+
+        /// <summary>
+        /// 修改试卷题型
+        /// </summary>
+        /// <param name="model"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic UpdateExamPaperDetail(W_ExamPaperDetail model)
+        {
+            bool flag = false;
+            if (model != null && model.ID > 0)
+            {
+                flag = mapper.UpdateExamPaperDetail(model);
+            }
+            return Success(flag ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 给试卷题型添加题目 
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddPaperDetailQuestions(ExamPaperPostModel model)
+        {
+            return Success(mapper.AddPaperDetailQuestions(model) ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 删除试卷
+        /// </summary>
+        /// <param name="model"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteExamPaper(W_ExamPaper model)
+        {
+            return Success(mapper.DeleteExamPaper(model.ID) ? "操作成功" : "操作失败");
+        }
+        
+        /// <summary>
+        /// 获取试卷信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetExamPaper(int id)
+        {
+            return Success(mapper.GetExamPaper(id));
+        }
+
+        /// <summary>
+        /// 获取试卷列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetExamPaperList([FromUri]ExamPagerRequest request)
+        {
+            if (!string.IsNullOrEmpty(request.Title))
+                request.Title = request.Title.Trim();
+            return Success(mapper.GetExamPaperList(request, this.System_Station_ID), request.PageIndex == 1 ? mapper.GetExamPaperTotalCount(request, this.System_Station_ID) : 0);
+        }
+
+        /// <summary>
+        /// 组卷
+        /// </summary>
+        /// <param name="paper"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic CombinationExamPaper(W_ExamPaper paper) 
+        {
+            return Success(mapper.CombinationExamPaper(paper.ID) ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 获取题目信息
+        /// </summary>
+        /// <param name="examPaperId"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetExamPaperQuestions(int examPaperId)
+        {
+            return Success(mapper.GetExamPaperQuestions(examPaperId,this.System_Station_ID, this.StuId));
+        }
+
+        /// <summary>
+        /// 获取试卷做题结果
+        /// </summary>
+        /// <param name="busId"></param>
+        /// <param name="resultId"></param>
+        /// <returns></returns>
+        [HttpGet,AllowAnonymous]
+        public dynamic GetExamPaperResult(int busId, int resultId)
+        {
+            return Success(mapper.GetExamPaperResult(busId, resultId, this.System_Station_ID, this.StuId));
+        }
+
+        /// <summary>
+        /// 根据试卷ID获取题型列表
+        /// </summary>
+        /// <param name="examPaperId"></param>
+        /// <author>SZF</author>
+        /// <date>2017-11-16</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetExamPaperType(int examPaperId)
+        {
+            var dict = mapper.GetExamPaperType(examPaperId);
+            return Success(dict, dict.Count);
+        }
+
+        /// <summary>
+        /// 根据题型ID获取题型信息
+        /// </summary>
+        /// <param name="examPaperId"></param>
+        /// <author>SZF</author>
+        /// <date>2017-11-16</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetExamPaperTypebyID(int ID)
+        {
+            var dict = mapper.GetExamPaperTypebyID(ID);
+            return Success(dict, dict.Count);
+        }
+
+
+
+        /// <summary>
+        /// 根据ID删除试卷题型
+        /// </summary>
+        /// <param name="model"></param>
+        /// <author>SZF</author>
+        /// <date>2017-11-16</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteExamPaperDetail(W_ExamPaperDetail model)
+        {
+            bool flag = false;
+            if (model.ID > 0)
+            {
+                flag = mapper.DeleteExamPaperDetail(model.ID);
+            }
+            return Success(flag ? "操作成功" : "操作失败");
+        }
+
+
+        /// <summary>
+        /// 查询已有的题目列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetExamPaperQuestionList([FromUri]QuestionRequest request)
+        {
+            return Success(mapper.GetExamPaperQuestionList(request), request.PageIndex == 1 ? mapper.GetExamPaperQuestionTotalCount(request) : 0);
+        }
+
+
+        /// <summary>
+        /// 查询未选的题目列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetNonExamPaperQuestionList([FromUri]QuestionRequest request)
+        {
+            return Success(mapper.GetNonExamPaperQuestionList(request), request.PageIndex == 1 ? mapper.GetNonExamPaperQuestionTotalCount(request) : 0);
+        }
+
+        /// <summary>
+        /// 删除多个试卷题目
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteExamPaperDetailDetail(ExamPaperPostModel request) 
+        {
+            return Success(mapper.DeleteExamPaperDetailDetail(request) ? "操作成功" : "操作失败");
+        }
+        #endregion
+
+    }
+}

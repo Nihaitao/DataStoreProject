@@ -1,0 +1,92 @@
+﻿using DataStoreProject.Model.Entity.Chapters;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataStoreProject.Model.ViewModel
+{
+    public class WebCourseModel
+    {
+    }
+
+
+    public class Course_ChaptersModel : W_Course_Chapters
+    {
+
+        /// <summary>
+        /// 是否观看  1已观看 0未观看
+        /// </summary>
+        public int IsLook { get; set; }
+
+        /// <summary>
+        /// 子节点
+        /// </summary>
+        public List<Course_ChaptersModel> ChildNodeList { get; set; }
+
+    }
+
+
+
+    public class Course_UnitModel : W_Course_Unit
+    {
+
+        /// <summary>
+        /// 单元课次
+        /// </summary>
+        public List<W_Course_Unit_ClassTime> UnitClassTimeList { get; set; }
+
+    }
+
+
+
+    public class DataInfoModel : W_DataInfo
+    {
+        public int StartRow { get; set; }
+
+        public int PageSize { get; set; }
+
+
+    }
+
+
+
+    //public class CourseWareModel : W_CourseWare
+    //{
+    //    public int StartRow { get; set; }
+
+    //    public int PageSize { get; set; }
+
+
+    //}
+
+
+    public class CourseModel : W_Course
+    {
+        public int StartRow { get; set; }
+
+        public int PageSize { get; set; }
+
+        public int IsShiT { get; set; }
+
+    }
+
+
+
+    public class CourseLookTimeModel
+    {
+        /// <summary>
+        /// 播放总秒数 秒
+        /// </summary>
+        public int TotalSeconds { get; set; }
+
+        /// <summary>
+        /// 视频时长 秒
+        /// </summary>
+        public int Duration { get; set; }
+
+
+    }
+
+}

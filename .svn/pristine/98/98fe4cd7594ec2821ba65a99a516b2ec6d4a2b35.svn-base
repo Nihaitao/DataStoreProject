@@ -1,0 +1,83 @@
+﻿using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using DataStoreProject.Model.Entity.ExamPaper;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using ServiceStack.OrmLite;
+
+namespace DataStoreProject.Business
+{
+    public class ExamPaperMapper : BaseMapper
+    {
+
+        public bool AddExamPaper(W_ExamPaper model)
+        {
+            if (string.IsNullOrEmpty(model.Title))
+            {
+                throw new ApiException("试卷名称不能为空");
+            }
+            using (var session = OpenOrmSession())
+            {
+                return session.Insert(model, true) > 0;
+            }
+        }
+
+        public bool AddExamPaperDetail(W_ExamPaperDetail model)
+        {
+            using (var session = OpenOrmSession())
+            {
+                return session.Insert(model, true) > 0;
+            }
+        }
+
+        public bool UpdateExamPaper(W_ExamPaper model)
+        {
+            if (string.IsNullOrEmpty(model.Title))
+            {
+                throw new ApiException("试卷名称不能为空");
+            }
+            using (var session = OpenOrmSession())
+            {
+                return session.Update(model) > 0;
+            }
+        }
+
+        public bool UpdateExamPaperDetail(W_ExamPaperDetail model)
+        {
+            using (var session = OpenOrmSession())
+            {
+                return session.Update(model) > 0;
+            }
+        }
+
+        public bool DeleteExamPaper(int id)
+        {
+            return SqlMapper.Delete("DeleteExamPaper", new { id }) > 0;
+        }
+
+        public IList GetExamPaper(int id)
+        {
+            return QueryForList("GetExamPaper", new { id });
+        }
+
+        public IList GetExamPaperList(string title, int type, int store, int level)
+        {
+            return QueryForList("GetExamPaperList", new { title, type, store, level });
+        }
+
+
+        public IList CombinationExamPaper(string p, int examPaperId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IList DoExamPaper(string p, int examPaperId)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}

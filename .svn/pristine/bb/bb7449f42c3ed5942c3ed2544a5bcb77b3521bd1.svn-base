@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+
+    <select id="selectDisciplineByID" resultClass="map" parameterClass="map">
+      select  *,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID# ) as AddPersonName  from  W_Discipline as a  where ID=#ID#  and  System_Station_ID=#System_Station_ID#;
+    </select>
+
+    <select id="GetAllDiscipline" resultClass="DataStoreProject.Model.ViewModel.DisciplineModel" parameterClass="map">
+      select ID,CID,`Name`,Description,Picture,Valid,AddPerson,IsTop,IsRecommend,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID# ) as AddPersonName,AddTime,Orders,System_Station_ID
+      <include refid ="GetAllDiscipline_Fragment"></include>
+    </select>
+
+    <sql id="GetAllDiscipline_Fragment">
+      from w_discipline as a where  System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        Valid=#Valid#
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="IsRecommend">
+        IsRecommend=#IsRecommend#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Name">
+        `Name` like concat('%',#Name#,'%')
+      </isNotEmpty>
+      order by Orders
+    </sql>
+
+    <update id="SortDiscipline" parameterClass="map">
+      update w_discipline set Orders = Orders+1 where ID in (SELECT ID from (select ID from w_discipline where CID=#currParentId# and System_Station_ID = #System_Station_ID# and ID != #currDisciplineId#) aa);
+    </update>
+
+    <update id="SortDiscipline1" parameterClass="map">
+      update w_discipline set Orders = Orders+1 where ID in (SELECT ID from (select ID from w_discipline where CID=#currParentId# and System_Station_ID = #System_Station_ID# and Orders <![CDATA[  <  ]]> #old_next_order# and ID != #currDisciplineId#) aa);
+    </update>
+
+    <update id="SortDiscipline2" parameterClass="map">
+      update w_discipline set Orders = (select Orders from (select max(orders) Orders from w_discipline where CID=#currParentId# and System_Station_ID = #System_Station_ID#) aa) where ID = #currDisciplineId# and System_Station_ID = #System_Station_ID#;
+    </update>
+    <update id="SortDiscipline3" parameterClass="map">
+      update w_discipline set Orders = Orders-1 where ID in (SELECT ID from (select ID from w_discipline where CID=#currParentId# and System_Station_ID = #System_Station_ID# and ID != #currDisciplineId#) aa);
+    </update>
+
+    <update id="SortDiscipline4" parameterClass="map">
+      update w_discipline set Orders = Orders-1 where ID in (SELECT ID from (select ID from w_discipline where CID=#currParentId# and System_Station_ID = #System_Station_ID# and Orders > #old_prev_order# and ID != #currDisciplineId#) aa);
+    </update>
+
+    <update id="SortDiscipline5" parameterClass="map">
+      update w_discipline set Orders = #new_next_order# where id = #currDisciplineId# and System_Station_ID = #System_Station_ID#;
+    </update>
+
+    <update id="SortDiscipline6" parameterClass="map">
+      update w_discipline set Orders = Orders+1 where ID in (SELECT ID from (select ID from w_discipline where CID=#currParentId# and System_Station_ID = #System_Station_ID# and Orders <![CDATA[  >  ]]> #new_prev_order#  and ID != #currDisciplineId#) aa);
+    </update>
+
+    <update id="SortDiscipline7" parameterClass="map">
+      update w_discipline set Orders = Orders+1 where ID in (SELECT ID from (select ID from w_discipline where CID=#currParentId# and System_Station_ID = #System_Station_ID# and Orders <![CDATA[  <  ]]> #old_next_order# and Orders > #new_prev_order# and ID != #currDisciplineId#) aa);
+    </update>
+
+    <update id="SortDiscipline8" parameterClass="map">
+      update w_discipline set Orders = #new_prev_order# where id = #currDisciplineId# and System_Station_ID = #System_Station_ID#;
+    </update>
+
+    <update id="SortDiscipline9" parameterClass="map">
+      update w_discipline set Orders = Orders-1 where ID in (SELECT ID from (select ID from w_discipline where CID=#currParentId# and System_Station_ID = #System_Station_ID#  and Orders <![CDATA[  <  ]]> #new_next_order# and ID!= #currDisciplineId#) aa);
+    </update>
+
+    <update id="SortDiscipline10" parameterClass="map">
+      update w_discipline set Orders = Orders-1 where ID in (SELECT ID from (select ID from w_discipline where CID=#currParentId# and System_Station_ID = #System_Station_ID# and Orders <![CDATA[  <  ]]> #new_next_order# and Orders <![CDATA[  >  ]]> #old_prev_order# and ID != #currDisciplineId#) aa);
+    </update>
+
+    <update id="UpdateDisciplineValid" parameterClass="map">
+      update w_discipline set valid=#valid# where ID=#ID# and System_Station_ID=#System_Station_ID#
+    </update>
+
+    <select id="GetDisciplineValid" resultClass="DataStoreProject.Model.Entity.Discipline.W_Discipline" parameterClass="map">
+      select *  from   W_Discipline  where CID=#ID#  and  System_Station_ID=#System_Station_ID#
+    </select>
+
+    <select id="GetDisciplineWithCID" resultClass="DataStoreProject.Model.Entity.Discipline.W_DisciplineModel" parameterClass="map">
+      select y.ID,y.CID,y.`NAME`,if (countDis > 0,1,0) isParent FROM
+      (select ID,CID,`NAME`,
+      (select count(1) from w_discipline where System_Station_ID = #System_Station_ID# and CID= a.ID and Valid =1) countDis
+      from w_discipline as a where System_Station_ID = #System_Station_ID# and CID=#CID# and Valid =1 order by Orders) y;
+    </select>
+
+    <select id="GetDisciplineIDModel" resultClass="DataStoreProject.Model.ViewModel.DisciplineIDModel" parameterClass="map">
+      select ID,CID from w_discipline where id=#DisciplineID#
+    </select>
+
+    <select id="GetDisciplineWithWebCourse" resultClass="DataStoreProject.Model.Entity.Discipline.W_Discipline" parameterClass="map">
+      select d.ID,d.`Name` from W_Course as w left join w_discipline d on w.Discipline_ID=d.ID where d.System_Station_ID = #System_Station_ID# and w.System_Station_ID = #System_Station_ID# group by d.ID,d.`Name`;
+    </select>
+    
+    <select id="GetAllDisciplines" resultClass="DataStoreProject.Model.ViewModel.DisciplineModel" parameterClass="map">
+      select ID,CID,`Name`,Description,Picture,Valid,AddPerson,IsTop,IsRecommend,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID# ) as AddPersonName,AddTime,Orders,System_Station_ID from w_discipline as a where 1=1
+      and System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        Valid=#Valid#
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="IsRecommend">
+        IsRecommend=#IsRecommend#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Name">
+        `Name` like concat('%',#Name#,'%')
+      </isNotEmpty>
+      order by Orders;
+    </select>
+
+    <select id="GetCourseLists" resultClass="DataStoreProject.Model.Entity.Chapters.W_CourseModel" parameterClass="map">
+      select  *,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,
+      (select Name from w_discipline as b where a.Discipline_ID=b.ID) as Discipline_Name,
+      (select ti.Name from t_teacherinfo_detail as t inner JOIN t_teacherinfo ti on t.Teacher_ID=ti.ID where t.ID=a.TeacherDetail_ID) as TeacherDetail_Name,
+      (select count(ID) AS IsShiT from w_course_chapters where Course_ID=a.ID and cid>0 and IsOpen=2 and valid=1) as IsShiT
+      from  W_Course  as a where  System_Station_ID=#System_Station_ID#
+    <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+      Valid=#Valid#
+    </isGreaterThan>
+    order by  valid desc,AddTime desc
+  </select>
+
+    <update id="MoveIDDiscipline" parameterClass="map">
+      UPDATE w_discipline SET Orders=Orders+1 WHERE Orders > #new_prev_order# and CID=#currParentId# AND System_Station_ID=#System_Station_ID#;
+      UPDATE w_discipline set Orders=#new_prev_order#+1 where ID=#currDisciplineId# and System_Station_ID=#System_Station_ID#;
+    </update>
+
+
+    <select id="GetMaxOrders" resultClass="int" parameterClass="map">
+      SELECT MAX(Orders) from w_discipline  where System_Station_ID=#System_Station_ID# and  CID=#CID#
+    </select>
+    
+  </statements>
+</sqlMap>

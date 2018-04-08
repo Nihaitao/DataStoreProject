@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="DemoMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="selectChapters" resultClass="map" parameterClass="map">
+      select * from w_chapters
+      <dynamic prepend="where">
+        <isNotEmpty prepend="and" property="QuestionStore_ID">
+          `QuestionStore_ID`=#QuestionStore_ID#
+        </isNotEmpty>
+      </dynamic>
+    </select>
+
+    <select id="UpdataChapters" resultClass="map" parameterClass="map">
+      updata w_chapters
+      set
+        Valid=#Valid#
+      where
+        ID=#ID#
+    </select>
+  </statements>
+</sqlMap>

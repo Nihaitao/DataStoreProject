@@ -1,0 +1,97 @@
+﻿using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using DataStoreProject.Model.Entity.Dictionary;
+using DataStoreProject.Model.ViewModel;
+using ServiceStack.OrmLite.Dapper;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Web;
+
+namespace DataStoreProject.Business
+{
+    public class HDictionaryMapper:BaseMapper
+    {
+        /// <summary>
+        /// 根据列名查找字典数据 
+        /// </summary>
+        /// <param name="System_Station_ID"></param>
+        /// <param name="ColumnName">列名</param>
+        /// <returns></returns>
+        public IList GetHDictionaryList(int System_Station_ID, int Valid, string ColumnName)
+        {
+            if (Valid == -1)
+            {
+                GetInitializationAllHDictionaryList(System_Station_ID, ColumnName);
+            }
+            return QueryForList("GetHDictionartyByColumnName", new { System_Station_ID = System_Station_ID, Valid = Valid, ColumnName = ColumnName });
+        }
+
+        /// <summary>
+        /// 初始化字典列表 
+        /// </summary>
+        /// <param name="System_Station_ID">机构ID</param>
+        /// <returns>List<H_Dictionary></returns>
+        public void GetInitializationAllHDictionaryList(int System_Station_ID, string ColumnName)
+        {
+            List<H_Dictionary> list = GetAllHDictionaryList(System_Station_ID, ColumnName);
+            List<H_Dictionary> listDetail = GetHictionartyDetailByColumnName(System_Station_ID, ColumnName);
+            if (list.Count > 0)
+            {
+                foreach (var model in list)
+                {
+                    var data = listDetail.Where(x => x.ID == model.ID).FirstOrDefault();
+                    if (data != null)
+                    {
+                        continue;
+                    }
+                    H_Dictionary_Detail HDmodel = new H_Dictionary_Detail();
+                    HDmodel.Description = model.Description;
+                    HDmodel.Dictionary_ID = model.ID;
+                    HDmodel.SortID = model.SortID;
+                    HDmodel.Valid = model.Valid;
+                    HDmodel.IsDelete = model.IsDelete;
+                    HDmodel.System_Station_ID = System_Station_ID;
+                    InsertHDictionary(HDmodel);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 增加字典详细表  by ljg 20171027
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <returns></returns>
+        public bool InsertHDictionary(H_Dictionary_Detail Model)
+        {
+            if (Orm.Insert(Model)<=0)
+            {
+                 throw new ApiException("添加失败");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 获取字典列表 
+        /// </summary>
+        /// <param name="System_Station_ID">机构ID</param>
+        /// <returns>List<H_Dictionary></returns>
+        public List<H_Dictionary> GetAllHDictionaryList(int System_Station_ID, string ColumnName)
+        {
+            return SqlMapper.QueryForList<H_Dictionary>("GetAllHDictionaryList", new { System_Station_ID = System_Station_ID, ColumnName = ColumnName }).ToList();
+        }
+
+        /// <summary>
+        /// 根据列名获取字典数据
+        /// </summary>
+        /// <returns></returns>
+        public List<H_Dictionary> GetHictionartyDetailByColumnName(int System_Station_ID, string ColumnName)
+        {
+           return  SqlMapper.QueryForList<H_Dictionary>("GetHictionartyDetailByColumnName", new { System_Station_ID = System_Station_ID, ColumnName = ColumnName }).ToList();
+        }
+
+    }
+}

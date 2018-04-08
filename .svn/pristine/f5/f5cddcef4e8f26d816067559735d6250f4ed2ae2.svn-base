@@ -1,0 +1,466 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.Entity.Chapters;
+using DataStoreProject.Model.Entity.Question;
+using DataStoreProject.Model.Entity.ExamPaper;
+using DataStoreProject.Model.Entity;
+using DataStoreProject.Model.ViewModel;
+using DataStoreProject.Model.Entity.Discipline;
+
+namespace DataStoreProject.Business
+{
+    public class DisciplineMapper : BaseMapper
+    {
+
+        /// <summary>
+        /// 根据学科id 查找学科
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <param name="System_Station_ID"></param>
+        /// <returns></returns>
+        public IList GetDisciplineByID(int ID, int System_Station_ID)
+        {
+            return QueryForList("selectDisciplineByID", new { ID = ID, System_Station_ID = System_Station_ID });
+        }
+
+        /// <summary>
+        /// 是否推荐学科
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <param name="System_Station_ID"></param>
+        /// <returns></returns>
+        public bool GetIsRecommend(int ID, int Recommend, int System_Station_ID)
+        {
+            W_Discipline model = Orm.Single<W_Discipline>(x => x.ID == ID && x.System_Station_ID == System_Station_ID);
+            if (model == null)
+            {
+                throw new ApiException("学科已删除，请重试");
+            }
+            if (Recommend == 1)
+            {
+                model.IsRecommend = 1;
+            }
+            else
+            {
+                model.IsRecommend = 0;
+            }
+            if (Orm.Update(model) <= 0)
+            {
+                throw new ApiException("操作失败,请重试");
+            }
+            return true;
+        }
+
+        /// <summary>
+        ///  查询所有的学科
+        /// </summary>
+        /// <param name="System_Station_ID">系统ID</param>
+        /// <returns></returns>
+        public List<DisciplineModel> GetAllDiscipline(CampusModel Model, int System_Station_ID)
+        {
+            List<DisciplineModel> List = SqlMapper.QueryForList<DisciplineModel>("GetAllDiscipline", new { System_Station_ID = System_Station_ID, IsRecommend = Model.IsRecommend, Valid = Model.Valid, Name = Model.Name }).ToList();
+
+            //添加子集
+            List<DisciplineModel> NodeList = new List<DisciplineModel>();
+            if (List != null && List.Count > 0)
+            {
+                NodeList = List.FindAll(X => X.CID == 0);
+                if (NodeList != null && NodeList.Count > 0)
+                {
+                    NodeList.ForEach(x =>
+                    {
+                        x.ChildNodeList = List.FindAll(F => F.CID == x.ID);
+                        if (x.ChildNodeList != null && x.ChildNodeList.Count > 0)
+                        {
+                            x.ChildNodeList.ForEach(y =>
+                            {
+                                y.ChildNodeList = List.FindAll(K => K.CID == y.ID);
+                            });
+                        }
+                    });
+                }
+            }
+            return NodeList;
+        }
+
+        /// <summary>
+        /// 拖拽排序（拖拽完就保存）
+        /// </summary>
+        /// <param name="old_prev_order">拖拽前上节点排序值</param>
+        /// <param name="old_next_order">拖拽前下节点排序值</param>
+        /// <param name="new_prev_order">拖拽后上节点排序值</param>
+        /// <param name="new_next_order">拖拽后下节点排序值</param>
+        /// <param name="currDisciplineId">当前被拖拽ID</param>
+        /// <param name="currParentId">当前被拖拽ID的父ID</param>
+        /// <param name="System_Station_ID">系统ID</param>
+        /// <returns></returns>
+        public bool SortDiscipline(SortDisciplineModel model, int System_Station_ID)
+        {
+            W_Discipline Disciplinemodel = Orm.Single<W_Discipline>(x => x.ID == model.currDisciplineId && x.System_Station_ID == System_Station_ID);
+
+            if (model.new_prev_order == model.old_prev_order && model.new_next_order == model.old_next_order) //没移动
+                return false;
+
+            if (model.new_prev_order == 0) //第一种情况：拖到最上面 （拖拽后上一层order为0）
+            {
+                Disciplinemodel.Orders = 1;
+                if (Orm.Update(Disciplinemodel) > 0)
+                {
+                    if (model.old_next_order == 0) //从最下面拖到最上面
+                    {
+                        return QueryForList("SortDiscipline", new { currParentId = model.currParentId, System_Station_ID = System_Station_ID, currDisciplineId = model.currDisciplineId }).Count > 0;
+                    }
+                    else
+                    {
+                        return QueryForList("SortDiscipline1", new { currParentId = model.currParentId, System_Station_ID = System_Station_ID, old_next_order = model.old_next_order, currDisciplineId = model.currDisciplineId }).Count > 0;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else if (model.new_next_order == 0)//第二种情况：拖到最下面（拖拽后下一层order为0）
+            {
+                if (QueryForList("SortDiscipline2", new { currParentId = model.currParentId, System_Station_ID = System_Station_ID, currDisciplineId = model.currDisciplineId }).Count > 0)
+                {
+                    if (model.old_prev_order == 0) //从最上面拖到最下面
+                    {
+                        return QueryForList("SortDiscipline3", new { currParentId = model.currParentId, System_Station_ID = System_Station_ID, currDisciplineId = model.currDisciplineId }).Count > 0;
+                    }
+                    else
+                    {
+                        return QueryForList("SortDiscipline4", new { currParentId = model.currParentId, System_Station_ID = System_Station_ID, old_prev_order = model.old_prev_order, currDisciplineId = model.currDisciplineId }).Count > 0;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else if (model.new_prev_order > 0 && model.new_next_order > 0)//第三种情况：拖到中间
+            {
+                if (model.new_prev_order < model.old_prev_order && model.new_next_order < model.old_next_order)//往上拖
+                {
+                    if (QueryForList("SortDiscipline5", new { new_next_order = model.new_next_order, currDisciplineId = model.currDisciplineId, System_Station_ID = System_Station_ID }).Count > 0)
+                    {
+                        if (model.old_next_order == 0) //从最下面往上拖
+                        {
+                            return QueryForList("SortDiscipline6", new { currParentId = model.currParentId, System_Station_ID = System_Station_ID, new_prev_order = model.new_prev_order, currDisciplineId = model.currDisciplineId }).Count > 0;
+                        }
+                        else
+                        {
+                            return QueryForList("SortDiscipline7", new { currParentId = model.currParentId, System_Station_ID = System_Station_ID, old_next_order = model.old_next_order, new_prev_order = model.new_prev_order }).Count > 0;
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else if (model.new_prev_order > model.old_prev_order && model.new_next_order > model.old_next_order)//往下拖
+                {
+                    if (QueryForList("SortDiscipline8", new { new_prev_order = model.new_prev_order, currDisciplineId = model.currDisciplineId, System_Station_ID = System_Station_ID }).Count > 0)
+                    {
+                        if (model.old_prev_order == 0) //从最上面往下拖
+                        {
+                            return QueryForList("SortDiscipline9", new { currParentId = model.currParentId, System_Station_ID = System_Station_ID, new_next_order = model.new_next_order, currDisciplineId = model.currDisciplineId }).Count > 0;
+                        }
+                        else
+                        {
+                            return QueryForList("SortDiscipline10", new { currParentId = model.currParentId, System_Station_ID = System_Station_ID, new_next_order = model.new_next_order, old_prev_order = model.old_prev_order }).Count > 0;
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        ///删除学科及对应的关系表 DeleteDiscipline
+        /// </summary>
+        public bool RemoveDiscipline(int ID, int System_Station_ID)
+        {
+            if (ID <= 0)
+            {
+                throw new ApiException("无效参数!");
+            }
+            //判断是不是该机构添加的学科 
+            W_Discipline model = Orm.Single<W_Discipline>(x => x.ID == ID && x.System_Station_ID == System_Station_ID);
+            if (model == null)
+            {
+                throw new ApiException("操作失败，未找到对应的数据！");
+            }
+            ///判断学科启用状态
+            if (model.Valid == 1)
+            {
+                throw new ApiException("学科启用状态，不能删除！");
+            }
+            W_Discipline modelCid = Orm.Single<W_Discipline>(x => x.CID == ID && x.System_Station_ID == System_Station_ID);
+            ///判断学科子集是否存在课程
+            if (modelCid != null)
+            {
+                throw new ApiException("该学科下面存在课程，不能删除！");
+            }
+            W_QuestionStore modelstore = Orm.Single<W_QuestionStore>(x => x.Discipline_ID == ID && x.System_Station_ID == System_Station_ID && x.IsDelete == 0);
+            ///判断题库是否应用该学科
+            if (modelstore != null)
+            {
+                throw new ApiException("题库应用了该学科，不能删除！");
+            }
+            W_CourseWare modelware = Orm.Single<W_CourseWare>(x => x.Discipline_ID == ID && x.System_Station_ID == System_Station_ID);
+            ///判断资源库是否应用该学科
+            if (modelware != null)
+            {
+                throw new ApiException("资源库应用了该学科，不能删除！");
+            }
+            //删除数据
+            if (Orm.Delete<W_Discipline>(x => x.ID == ID && x.System_Station_ID == System_Station_ID) > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        ///添加 or 修改学科
+        /// </summary>
+        public dynamic SaveDiscipline(W_Discipline Model, int System_Station_ID, int AccountID)
+        {
+            Model.AddPerson = AccountID;
+            Model.AddTime = DateTime.Now;
+            Model.Valid = 1;
+            Model.System_Station_ID = System_Station_ID;
+            if (Model.ID > 0)
+            {
+                //判断是不是该机构添加的学科 
+                W_Discipline model = Orm.Single<W_Discipline>(x => x.ID == Model.ID && x.System_Station_ID == System_Station_ID);
+                if (model == null)
+                {
+                    throw new ApiException("操作失败，未找到对应的数据！");
+                }
+                if (Orm.Update(Model) > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                int a=(int)Orm.Insert(Model, true);
+                return Orm.Single<W_Discipline>(x => x.ID == a && x.System_Station_ID == System_Station_ID);
+            }
+        }
+
+        /// <summary>
+        /// 禁用、启用学科
+        /// </summary>
+        public bool SetDisciplineValid(W_Discipline model, int System_Station_ID)
+        {
+            SqlMapper.BeginTransaction();
+            try
+            {
+                if (model.ID < 0)
+                {
+                    throw new ApiException("无效参数");
+                }
+                W_Discipline modelDiscipline = Orm.Single<W_Discipline>(x => x.ID == model.ID && x.System_Station_ID == System_Station_ID);
+                if (modelDiscipline == null)
+                {
+                    throw new ApiException("操作失败，您无权操作！");
+                }
+                if (model.Valid == 1)
+                {
+                    if (modelDiscipline.CID != 0)
+                    {
+                        W_Discipline CidModel = Orm.Single<W_Discipline>(x => x.ID == modelDiscipline.CID && x.System_Station_ID == System_Station_ID);
+                        if (CidModel.Valid == 0)
+                        {
+                            throw new ApiException("请先启用上级学科！");
+                        }
+                    }
+                    modelDiscipline.Valid = model.Valid;
+                    if (Orm.Update(modelDiscipline) <= 0)
+                    {
+                        throw new ApiException("修改失败");
+                    }
+                }
+                else
+                {
+                    List<W_Discipline> DisModel = SqlMapper.QueryForList<W_Discipline>("GetDisciplineValid", new { ID = modelDiscipline.ID, System_Station_ID = System_Station_ID }).ToList();
+                    if (DisModel != null && DisModel.Count > 0)
+                    {
+                        DisModel.ForEach(X =>
+                        {
+                            SqlMapper.Update("UpdateDisciplineValid", new { ID = X.ID, Valid = model.Valid, System_Station_ID = System_Station_ID });
+                            GetDiscipline_ChildSetValid(X.ID, model.Valid, System_Station_ID);
+                        });
+
+                    }
+                    modelDiscipline.Valid = model.Valid;
+                    if (Orm.Update(modelDiscipline) <= 0) 
+                    {
+                        throw new ApiException("操作失败");
+                    }
+                }
+                SqlMapper.CommitTransaction();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                SqlMapper.RollBackTransaction();
+                throw ex;
+            }
+        }
+
+        public void GetDiscipline_ChildSetValid(int ID, int Valid, int System_Station_ID)
+        {
+            List<W_Discipline> DisModel = SqlMapper.QueryForList<W_Discipline>("GetDisciplineValid", new { ID = ID, System_Station_ID = System_Station_ID }).ToList();
+            if (DisModel != null && DisModel.Count > 0)
+            {
+                DisModel.ForEach(X =>
+                {
+                    SqlMapper.Update("UpdateDisciplineValid", new { ID = X.ID, Valid = Valid, System_Station_ID = System_Station_ID });
+                    GetDiscipline_ChildSetValid(X.ID, Valid, System_Station_ID);
+                });
+
+            }
+        }
+        /// <summary>
+        /// 根据父节点获得子节点
+        /// </summary>
+        /// <param name="System_Station_ID"></param>
+        /// <param name="CID">父ID 第一层为0</param>
+        /// <returns></returns>
+        public IList<W_DisciplineModel> GetDisciplineWithCID(int System_Station_ID, int CID)
+        {
+            return SqlMapper.QueryForList<W_DisciplineModel>("GetDisciplineWithCID", new { System_Station_ID = System_Station_ID, CID = CID });
+        }
+
+        /// <summary>
+        /// 根据学科ID找对应的1.2.3级ID  当前只支持3级
+        /// </summary>
+        /// <param name="DisciplineID"></param>
+        /// <returns></returns>
+        public DisciplineIDModel GetDisciplineIDS(int DisciplineID)
+        {
+            DisciplineIDModel Model = new DisciplineIDModel();
+            DisciplineIDModel Model2 = GetDisciplineIDModel(DisciplineID);
+            if (Model2 != null)
+            {
+                if (Model2.CID > 0)
+                {   //查找当前父级信息
+                    DisciplineIDModel Model3 = GetDisciplineIDModel(Model2.CID);
+                    if (Model3 != null && Model3.CID > 0)
+                    {
+                        Model.Discipline_ThreeLevelID = Model2.ID;//第三级ID
+                        Model.Discipline_TwoLevelID = Model3.ID;//第二级ID
+                        Model.Discipline_OneLevelID = Model3.CID;//第一级ID
+                    }
+                    else
+                    {
+                        Model.Discipline_OneLevelID = Model2.CID;//第一级ID
+                        Model.Discipline_TwoLevelID = Model2.ID;//第二级ID
+                    }
+                }
+                else
+                    Model.Discipline_OneLevelID = Model2.ID;//只有第一级ID
+            }
+            return Model;
+        }
+
+        /// <summary>
+        /// 根据学科id 查找父级ID 
+        /// </summary>
+        /// <param name="DisciplineID"></param>
+        /// <returns></returns>
+        public DisciplineIDModel GetDisciplineIDModel(int DisciplineID)
+        {
+            if (DisciplineID > 0)
+                return SqlMapper.QueryForObject<DisciplineIDModel>("GetDisciplineIDModel", new { DisciplineID = DisciplineID });
+            else
+                return null;
+        }
+
+        /// <summary>
+        /// 获得有网课的学科
+        /// </summary>
+        /// <param name="DisciplineID"></param>
+        /// <returns></returns>
+        public List<W_Discipline> GetDisciplineWithWebCourse(int System_Station_ID)
+        {
+            return SqlMapper.QueryForList<W_Discipline>("GetDisciplineWithWebCourse", new { System_Station_ID = System_Station_ID }).ToList();
+        }
+
+        /// <summary>
+        /// 获取一级学科下面所有二级学科列表以及课程列表  
+        /// </summary>
+        /// <param name="DisciplineID"></param>
+        /// <returns></returns>
+        public List<DisciplineModel> GetAllDisciplineInfo(int System_Station_ID)
+        {
+            DisciplineModel Model = new DisciplineModel();
+            Model.Valid = 1;//启用            
+            Model.System_Station_ID = System_Station_ID;
+            Model.IsRecommend = -1;
+            PageModel page = new PageModel();
+            List<DisciplineModel> List = GetAllDisciplines(Model);
+
+            W_CourseModel Course = new W_CourseModel();
+            Course.Valid = 1;//启用
+            Course.System_Station_ID = System_Station_ID;
+            List<W_CourseModel> CourseList = GetCourseList(Course);
+
+            List<DisciplineModel> NodeList = new List<DisciplineModel>();
+            if (List != null && List.Count > 0)
+            {
+                NodeList = List.FindAll(X => X.CID == 0);
+                if (NodeList != null && NodeList.Count > 0)
+                {
+                    //添加子集
+                    NodeList.ForEach(x =>
+                    {
+                        x.ChildNodeList = List.FindAll(F => F.CID == x.ID);
+                        if (x.ChildNodeList != null && x.ChildNodeList.Count > 0)
+                        {
+                            x.ChildNodeList.ForEach(y =>
+                            {
+                                y.ChildNodeList = List.FindAll(K => K.CID == y.ID);
+                            });
+                        }
+
+                        string DisciplineIds = string.Join(",", x.ChildNodeList.Select(m => m.ID));
+                        if (CourseList != null)
+                            x.CourseList = CourseList.Where(C => ("," + DisciplineIds + ",").IndexOf("," + C.Discipline_ID + ",") >= 0).ToList();
+                    });
+                }
+            }
+            return NodeList;
+        }
+
+        public List<DisciplineModel> GetAllDisciplines(DisciplineModel Model) 
+        {
+            return SqlMapper.QueryForList<DisciplineModel>("GetAllDisciplines", new { Valid = Model.Valid, IsRecommend = Model.IsRecommend, Name = Model.Name, System_Station_ID = Model.System_Station_ID }).ToList();
+        }
+
+        public List<W_CourseModel> GetCourseList(W_CourseModel Model)
+        {
+            return SqlMapper.QueryForList<W_CourseModel>("GetCourseLists", new { System_Station_ID = Model.System_Station_ID,  Valid = Model.Valid }).ToList();
+        }
+
+    }
+}

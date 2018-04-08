@@ -1,0 +1,295 @@
+﻿using CT.Common.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using DataStoreProject.Business;
+using System.Web.Http;
+using DataStoreProject.Model.Entity.Question;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class QuestionController : StationBaseApiController
+    {
+        QuestionMapper mapper = new QuestionMapper();
+
+        #region 题型  created by nht    2017-11-1
+        /// <summary>
+        /// 获取题型列表
+        /// </summary>
+        /// <author>nht</author>
+        /// <date>2017-11-1</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetQuestionTypeList()
+        {
+            var dict = mapper.GetQuestionTypeList();
+            return Success(dict, dict.Count);
+        }
+        #endregion
+
+        #region 题库  created by nht    2017-11-1
+        /// <summary>
+        /// 添加题库
+        /// </summary>
+        /// <param name="name">题库名称</param>
+        /// <param name="disciplineId">科次id</param>
+        /// <author>nht</author>
+        /// <date>2017-11-1</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddQuestionStore(string name, int disciplineId)
+        {
+            W_QuestionStore model = new W_QuestionStore();
+            model.Name = name;
+            model.Discipline_ID = disciplineId;
+            model.System_Station_ID = this.System_Station_ID;
+            model.AddPerson = this.AccountID;
+            model.AddTime = DateTime.Now;
+            model.Valid = 1;//默认启用
+            return Success(mapper.AddQuestionStore(model) ? "操作成功" : "操作失败");
+        }
+
+
+        /// <summary>
+        /// 修改、启用/禁用、删除题库
+        /// </summary>
+        /// <param name="id">题库id</param>
+        /// <param name="disciplineId">科次id</param>
+        /// <param name="name">题库名称</param>
+        /// <param name="isDelete">是否删除</param>
+        /// <param name="valid">启用/禁用</param>
+        /// <author>nht</author>
+        /// <date>2017-11-1</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic ModifyQuestionStore(int id, int disciplineId = 0, string name = null, int isDelete = 0, int valid = -1)
+        {
+            W_QuestionStore model = mapper.GetQuestionStore(id);
+            if (!string.IsNullOrEmpty(name))
+                model.Name = name;
+            if (disciplineId > 0)
+                model.Discipline_ID = disciplineId;
+            if (valid >= 0)
+                model.Valid = valid;
+            model.IsDelete = isDelete;
+            return Success(mapper.UpdateQuestionStore(model) ? "操作成功" : "操作失败");
+        }
+
+
+        /// <summary>
+        /// 根据题库ID获取题库
+        /// </summary>
+        /// <param name="id">题库id</param>
+        /// <author>nht</author>
+        /// <date>2017-11-1</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetQuestionStore(int id)
+        {
+            return Success(mapper.GetQuestionStoreById(id));
+        }
+
+
+        /// <summary>
+        /// 根据条件查询题库列表
+        /// </summary>
+        /// <param name="name">题库名称</param>
+        /// <param name="disciplineId">科次名称</param>
+        /// <param name="valid">已启用/已禁用</param>
+        /// <author>nht</author>
+        /// <date>2017-11-1</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetQuestionStoreList(string name, int disciplineId, int valid = -1)
+        {
+            var dict = mapper.GetQuestionStoreList(name, valid, disciplineId);
+            return Success(dict, dict.Count);
+        }
+        #endregion
+
+        #region 题目  created by nht    2017-11-2
+
+        /// <summary>
+        /// 添加题目信息
+        /// </summary>
+        /// <param name="model"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddQuestion(W_Question model)
+        {
+            bool flag = false;
+            if (model != null) 
+            {
+                model.System_Station_ID = this.System_Station_ID;
+                model.AddPerson = this.AccountID;
+                model.AddTime = DateTime.Now;
+                flag = mapper.AddQuestion(model);
+            }
+            return Success(flag ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 添加组合题材料信息
+        /// </summary>
+        /// <param name="content"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddQuestionData(string content) 
+        {
+            W_QuestionData model = new W_QuestionData();
+            model.Content = content;
+            model.AddPerson = this.AccountID;
+            model.AddTime = DateTime.Now;
+            return Success(mapper.AddQuestionData(model) ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 修改题目信息
+        /// </summary>
+        /// <param name="model"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic UpdateQuestion(W_Question model)
+        {
+            bool flag = false;
+            if (model != null && model.ID > 0)
+            {
+                flag = mapper.UpdateQuestion(model);
+            }
+            return Success(flag ? "操作成功" : "操作失败");
+        }
+        
+        /// <summary>
+        /// 修改组合题材料信息
+        /// </summary>
+        /// <param name="content"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic UpdateQuestionData(int id, string content)
+        {
+            return Success(mapper.UpdateQuestionData(id, content) ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 删除题目
+        /// </summary>
+        /// <param name="id"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteQuestion(int id)
+        {
+            return Success(mapper.DeleteQuestion(id) ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 删除组合题
+        /// </summary>
+        /// <param name="id"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteQuestionData(int id)
+        {
+            return Success(mapper.DeleteQuestionData(id) ? "操作成功" : "操作失败");            
+        }
+
+        /// <summary>
+        /// 获取普通题目信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetQuestion(int id)
+        {
+            return Success(mapper.GetQuestion(id));
+        }
+
+        /// <summary>
+        /// 获取组合题目信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetQuestionData(int id)
+        {
+            return Success(mapper.GetQuestionData(id));
+        }
+
+        /// <summary>
+        /// 获取题目列表
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="type"></param>
+        /// <param name="store"></param>
+        /// <param name="level"></param>
+        /// <author>nht</author>
+        /// <date>2017-11-2</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetQuestionList(string title, int type, int store, int level)
+        {
+            return Success(mapper.GetQuestionList(title, type, store, level));
+        }
+
+        #endregion
+
+
+        /// <summary>
+        /// 根据题目ID获取笔记列表by szf
+        /// </summary>
+        /// <author>SZF</author>
+        /// <date>2017-11-8</date>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetQuestionNoteList(int Question_ID)
+        {
+            string StuID = this.StuId;
+            return Success(mapper.GetQuestionNoteList(StuID, Question_ID));
+        }
+        /// <summary>
+        /// 添加笔记 by szf
+        /// <author>SZF</author>
+        /// <date>2017-11-8</date>
+        /// <param name="model">W_QuestionNote</param>
+        /// <returns></returns>
+        [HttpPost]
+
+        public dynamic AddQuestionNote(W_QuestionNote model)
+        {
+            model.AddTime = DateTime.Now.ToString();
+            model.StuID = this.StuId;
+            return Success(mapper.AddQuestionNote(model) ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 添加纠错 by szf
+        /// </summary>
+        /// <author>SZF</author>
+        /// <date>2017-11-8</date>
+        /// <param name="model">W_QuestionerrorCorrection</param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddQuestionerrorCorrection(W_QuestionerrorCorrection model)
+        {
+            model.AddTime = DateTime.Now.ToString();
+            model.StuID = this.StuId;
+            return Success(mapper.AddQuestionerrorCorrection(model) ? "操作成功" : "操作失败");
+        } 
+    }
+}

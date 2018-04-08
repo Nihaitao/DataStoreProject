@@ -1,0 +1,212 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+
+    <select id="GetQuestionTypeList" resultClass="map" parameterClass="map">
+      select * from w_questiontype where ID!=7
+    </select>
+
+    <select id="GetQuestionStoreById" resultClass="map" parameterClass="map">
+      select * from w_questionstore where ID = #id#
+    </select>
+
+    <select id="GetQuestionStoreList" resultClass="map" parameterClass="map">
+      select a.*,b.Name as AddPersonName,c.Name as DisciplineName
+      <include refid ="GetQuestionStore_Fragment"></include>
+    </select>
+
+    <select id="GetQuestionStoreCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetQuestionStore_Fragment"></include>
+    </select>
+    <sql id="GetQuestionStore_Fragment">
+      from w_questionstore a
+      left join h_station_account b on a.AddPerson = b.Account_ID
+      left join w_discipline c on a.Discipline_ID = c.ID where a.IsDelete = 0 and a.system_station_id = #stationId#
+      <isNotEmpty prepend="and" property="name">
+        a.Name like concat('%',#name#,'%')
+      </isNotEmpty>
+      <isGreaterThan compareValue="-1" prepend="and" property="valid">
+        a.Valid=#valid#
+      </isGreaterThan>
+      <isNotEqual compareValue="0" prepend="and" property="disciplineId">
+        a.Discipline_ID in (SELECT ID FROM w_discipline WHERE FIND_IN_SET(ID,GetChildList(#disciplineId#,'w_discipline')))
+      </isNotEqual>
+      order by a.Valid desc, a.ID desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <update id="UpdateQuestionData" parameterClass="map">
+      update w_questiondata set Content = #content# where ID = #id#
+    </update>
+
+    <update id="UpdateQuestion" parameterClass="map">
+      update w_question set DoCount = DoCount + 1
+      <isEqual property="Judge" compareValue="0">
+        ,EasyWrongAnswer = #EasyWrongAnswer#
+      </isEqual>
+      <isEqual property="Judge" compareValue="1">
+        ,CorrectCount = CorrectCount + 1
+      </isEqual>
+      where ID = #ID#
+    </update>
+    
+    <delete id="DeleteQuestion" parameterClass="map">
+      delete from w_question where ID = #id#
+    </delete>
+
+    <delete id="DeleteQuestionData" parameterClass="map">
+      delete from w_questiondata where ID = #id#;
+      delete from w_question where QuestionData_ID = #id#;
+    </delete>
+
+    <select id="GetQuestion" resultClass="map" parameterClass="map">
+      select a.*,b.Name as AddPersonName,c.Name as QuestionStoreName, d.Name as QuestionTypeName from w_question a
+      left join h_station_account b on a.AddPerson = b.Account_ID
+      left join w_questionstore c on a.QuestionStore_ID = c.ID
+      left join w_questiontype d on a.QuestionType_ID = d.ID
+      where a.ID = #id#
+    </select>
+
+
+    <select id="GetQuestionData" resultClass="map" parameterClass="map">
+      select a.*,b.Name as AddPersonName,c.Name as QuestionStoreName, d.Name as QuestionTypeName,
+      (select Content from w_questiondata where ID = a.QuestionData_ID) Content
+      from w_question a
+      left join h_station_account b on a.AddPerson = b.Account_ID
+      left join w_questionstore c on a.QuestionStore_ID = c.ID
+      left join w_questiontype d on a.QuestionType_ID = d.ID
+      where a.QuestionData_ID = (select QuestionData_ID from w_question where ID = #id#)
+    </select>
+
+    <select id="GetQuestionDataById" resultClass="map" parameterClass="map">
+      select a.*,b.Name as QuestionTypeName
+      from w_question a
+      left join w_questiontype b on a.QuestionType_ID = b.ID
+      where a.QuestionData_ID = #id#
+      order by a.sort
+    </select>
+
+    <select id="GetQuestionList" resultClass="map" parameterClass="map">
+      select a.*,b.Name as AddPersonName,c.Name as QuestionStoreName, (case when a.QuestionData_ID > 0 then "组合题" else d.Name end) as QuestionTypeName
+      <include refid ="GetQuestion_Fragment"></include>
+    </select>
+
+    <select id="GetQuestionTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetQuestion_Fragment"></include>
+    </select>
+    <sql id="GetQuestion_Fragment">
+      from w_question a
+      left join h_station_account b on a.AddPerson = b.Account_ID
+      left join w_questionstore c on a.QuestionStore_ID = c.ID
+      left join w_questiontype d on a.QuestionType_ID = d.ID
+      where a.system_station_id = #stationId#
+      <isNotEmpty prepend="and" property="title"> 
+        a.Title like concat('%',#title#,'%')
+      </isNotEmpty>
+      <isGreaterThan compareValue="0" property="type">
+        <isLessThan compareValue="7" prepend="and" property="type">
+          a.QuestionType_ID=#type# and a.QuestionData_ID = 0
+        </isLessThan>
+      </isGreaterThan>
+      <!--组合题-->
+      <isEqual compareValue="7" prepend="and" property="type">
+        a.QuestionData_ID > 0
+      </isEqual>
+      <isGreaterThan compareValue="0" prepend="and" property="store">
+        a.QuestionStore_ID=#store#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="level">
+        a.Level=#level#
+      </isGreaterThan>
+      order by a.ID desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetQuestionNoteList" resultClass="map" parameterClass="map">
+      select * from w_questionnote
+      <dynamic prepend="where">
+        <isNotEmpty prepend="and" property="StuID">
+          `StuID`=#StuID#
+        </isNotEmpty>
+        <isNotEmpty prepend="and" property="Question_ID">
+          `Question_ID`=#Question_ID#
+        </isNotEmpty>
+        order by AddTime desc
+      </dynamic>
+    </select>
+
+    <select id="QuestionHasBeenUsed" resultClass="int" parameterClass="map">
+      select (select count(1) from w_chapter_question where Question_ID = #id#) + (select count(1) from w_exampaperdetail_detail where Question_ID = #id#) as count
+    </select>
+
+
+
+    <select id="GetQuestionerrorCorrectionList" resultClass="map" parameterClass="map">
+      SELECT e.*,(SELECT COUNT(1) FROM w_questionerrorcorrection where Question_ID = e.Question_ID and Valid = 0) as Counts,t.`Name` as StoreName,p.`Name` as TypeName,q.Title,s.`Name` as StudentName 
+      <include refid ="GetQuestionerrorCorrectionList_Fragment"></include>
+    </select>
+
+    <select id="GetQuestionerrorCorrectionListCount" resultClass="int" parameterClass="map">
+       select count(1)
+      <include refid ="GetQuestionerrorCorrectionList_Fragment"></include>
+    </select>
+    <sql id="GetQuestionerrorCorrectionList_Fragment">
+      from w_questionerrorcorrection e
+      LEFT JOIN w_question q on e.Question_ID=q.ID
+      LEFT JOIN s_studentinfo s on e.StuID=s.StuID
+      LEFT JOIN w_questionstore t on q.QuestionStore_ID=t.ID
+      LEFT JOIN w_questiontype p on p.ID=q.QuestionType_ID
+      where 1=1 and t.System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        e.Valid=#Valid#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Title">
+        q.Title like concat('%',#Title#,'%')
+      </isNotEmpty>
+      ORDER BY e.Valid ASC ,e.AddTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+
+    <update id="UpdateQuestionerrorCorrection" parameterClass="map">
+      UPDATE w_questionerrorcorrection SET Valid=1 where Question_ID = #ID#
+    </update>
+
+
+    <select id="GetErrorcorrectionsummaryList" resultClass="map" parameterClass="map">
+      SELECT e.*,t.`Name` as StoreName,p.`Name` as TypeName,q.Title,s.`Name` as StudentName
+      from w_questionerrorcorrection e
+      LEFT JOIN w_question q on e.Question_ID=q.ID
+      LEFT JOIN s_studentinfo s on e.StuID=s.StuID
+      LEFT JOIN w_questionstore t on q.QuestionStore_ID=t.ID
+      LEFT JOIN w_questiontype p on p.ID=q.QuestionType_ID
+      where e.Valid=0 and e.Question_ID=#ID#
+    </select>
+
+    <select id="GetMyQuestionStoreList" resultClass="map" parameterClass="map">
+      select * from w_questionstore where ID in (
+      select(case when a.BusType = 1 then b.QuestionStore_ID else c.QuestionStore_ID end) as QuestionStore_ID
+      from w_doexamresult a
+      left JOIN w_chapterpractice b on a.BusID = b.ID and a.BusType = 1
+      left join w_exampaper c on a.BusID = c.ID and a.BusType = 0
+      where a.StuID = #StuId#
+      union
+      select QuestionStore_ID from w_question where ID in( SELECT BusID from w_collection where StuID = #StuId# and BusType = 0 )
+      union
+      SELECT QuestionStore_ID from w_question where ID in(SELECT Question_ID from w_questionnote where StuID = #StuId# and IsDelete = 0)
+      )
+      and Valid = 1 and System_Station_ID = #System_Station_ID#
+    </select>
+  </statements>
+</sqlMap>

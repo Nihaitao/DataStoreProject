@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetClassRoomListTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetClassRoomList_Fragment"></include>
+    </select>
+    <select id="GetClassRoomList" resultClass="map" parameterClass="map">
+      select  a.*,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=@System_Station_ID) as AddPersonName,c.Name as CampusName   
+      <include refid ="GetClassRoomList_Fragment"></include>
+    </select>
+
+    <sql id="GetClassRoomList_Fragment">
+      from  W_ClassRoom as a inner join w_campus as c on a.CampusID=c.ID  where  a.System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="0" prepend="and" property="ClassRoomType_ID">
+        a.ClassRoomType_ID=@ClassRoomType_ID
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="CampusID">
+        a.CampusID=@CampusID
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        a.Valid=@Valid
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Name">
+        `Name` like concat('%',#Name#,'%')
+      </isNotEmpty>
+      order by a.valid desc,a.ID asc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+    
+  </statements>
+</sqlMap>

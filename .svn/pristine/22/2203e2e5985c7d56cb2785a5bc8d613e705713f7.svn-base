@@ -1,0 +1,89 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.Entity.DataInfo;
+
+namespace DataStoreProject.Business
+{
+    public class DataInfoMapper : BaseMapper
+    {
+
+        public IList GetDatainfoList(int System_Station_ID)
+        {
+            return QueryForList("selectDatainfo", new { System_Station_ID = System_Station_ID });
+        }
+
+        public bool AddDataInfo(W_DataInfo model)
+        {
+            if (string.IsNullOrEmpty(model.Title))
+            {
+                throw new ApiException("标题不能为空");
+                //当出现异常后，可以直接抛ApiException，拦截器将会拦截异常，并格式化输出
+            }
+
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+
+                var id = session.Insert(model);
+                if (id > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool UpdateDataInfo(W_DataInfo test)
+        {
+            if (test == null)
+            {
+                throw new ApiException("对象错误");
+                //当出现异常后，可以直接抛ApiException，拦截器将会拦截异常，并格式化输出
+            }
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+                var id = session.Update(test); 
+                if (id > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        public bool DeleteDataInfo(int ID)
+        {
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+                var id = session.Delete<W_DataInfo>(x => x.ID == ID);
+                if (id > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        public W_DataInfo GetDownInfo(int id)
+        {
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+                return session.Select<W_DataInfo>(x => x.ID == id).FirstOrDefault();
+            }
+        }
+
+    }
+}

@@ -1,0 +1,179 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetOrderListTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetOrderList_Fragment"></include>
+    </select>
+    <select id="GetOrderList" resultClass="DataStoreProject.Model.ViewModel.OrderSearch" parameterClass="map">
+      select a.Name,a.CardNumber,w.ID,w.OrderNo,w.Price,w.PayPrice,w.PayStatus,w.PayTime,w.PayType,w.OrderState,
+      (select COUNT(od.ID) from w_order_detail od where od.CID=w.ID and od.IsDelete=0) as PayCount
+      <include refid ="GetOrderList_Fragment"></include>
+    </select>
+
+    <sql id="GetOrderList_Fragment">
+      from w_order w
+      LEFT JOIN s_studentinfo a on w.StuId=a.StuId
+      LEFT JOIN s_studentinfo_station b on a.StuId=b.StuID and b.System_Station_ID=w.System_Station_ID and w.OrderState = 0
+      where 1=1 and  w.System_Station_ID = #System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="PayType">
+        w.PayType = #PayType#
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="PayStatus">
+        w.PayStatus = #PayStatus#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Name">
+        a.Name like concat('%',#Name#,'%')
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="CardNumber">
+        a.CardNumber like concat('%',#CardNumber#,'%')
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="OrderNo">
+        w.OrderNo like concat('%',#OrderNo#,'%')
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="PayStartTime">
+        <![CDATA[ w.PayTime >= #PayStartTime#]]>
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="PayEndTime">
+        <![CDATA[w.PayTime < date_sub(#PayEndTime#,interval -1 day) ]]>
+      </isNotEmpty>
+      order by w.PayTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+    <select id="GetOrderDetailListByStuIdCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetOrderDetailListByStuId_Fragment"></include>
+    </select>
+    <select id="GetOrderDetailListByStuId" resultClass="DataStoreProject.Model.ViewModel.OrderStudentModel" parameterClass="map">
+      select o.ID,o.OrderNo,o.PayPrice,o.PayTime,o.PayStatus,o.PayType,o.OrderState,o.Price,
+      (select COUNT(od.ID) from w_order_detail od where od.CID=o.ID) as PayCount
+      <include refid ="GetOrderDetailListByStuId_Fragment"></include>
+    </select>
+
+    <sql id="GetOrderDetailListByStuId_Fragment">
+      from w_order o
+      left join s_studentinfo a on a.StuId=o.StuId
+      where o.StuId=#StuId# and o.OrderState = 0 and o.System_Station_ID =#System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="PayStatus">
+        o.PayStatus=#PayStatus#
+      </isGreaterThan>
+      order by o.PayTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetOrderListByCourse" resultClass="DataStoreProject.Model.Entity.Order.OrderMyCourseList" parameterClass="map">
+      select c.*,d.`Name` as CourseChaptersNameParent from
+      (
+      select a.*,b.`Name` as CourseChaptersName,b.CID as CourseChaptersIDParent from
+      (
+      select t.`Name` as TeacherName,o.PayTime,c.ID,c.TeachingMethod,c.`Name`,c.CoverPath,
+      IFNULL((select
+      ld.CourseChapters_ID
+      <include refid ="GetOrderListByCourse_Fragment"></include>
+    </select>
+
+    <sql id="GetOrderListByCourse_Fragment">
+      from w_course_look_detail ld
+      join w_course_chapters csc on ld.CourseChapters_ID=csc.ID
+      where ld.StuId=o.StuId and csc.Course_ID=c.ID
+      order by EndTime desc LIMIT 1),(SELECT wcc.ID from w_course as wc inner join w_course_chapters as wcc on wc.ID=wcc.Course_ID WHERE wc.ID=c.ID
+      and  wcc.cid>0  order BY wcc.id   limit 0,1
+      ))as CourseChaptersID,(
+      (( select COUNT(0)  from  w_course_look as ca inner join  w_course_chapters as cc  on ca.CourseChapters_ID=cc.ID  WHERE cc.Course_ID=c.ID and ca.StuId=#StuId# )
+      /(SELECT count(0) FROM w_course_chapters where Course_ID=c.ID and CID>0 and Valid=1 ))*100
+      ) as StudyLength
+      from w_order_detail od
+      left join w_order o on od.CID=o.ID
+      left join w_course c on c.ID=od.Course_ID
+      left join t_teacherinfo_detail td on td.ID=c.TeacherDetail_ID
+      left join t_teacherinfo t on t.ID=td.Teacher_ID
+      where o.System_Station_ID=#System_Station_ID# and o.PayStatus=1 and c.Valid=1 and o.StuId=#StuId# and od.IsDelete = 0
+      )a left join w_course_chapters b on a.CourseChaptersID=b.ID
+      )c left join w_course_chapters d on d.ID=c.CourseChaptersIDParent
+      where 1=1
+      <isGreaterThan compareValue="-1" prepend="and" property="TeachingMethod">
+        TeachingMethod=#TeachingMethod#
+      </isGreaterThan>
+      <isNotEqual compareValue="-1"  property="topNum">
+        order by PayTime desc limit #topNum#
+      </isNotEqual>
+      <isEqual property="topNum" compareValue="-1">
+        order by PayTime desc
+      </isEqual>
+    </sql>
+    
+
+    <select id="GetShoppingCar" resultClass="map" parameterClass="map">
+      select a.*,(select ti.Name from t_teacherinfo_detail as t inner JOIN t_teacherinfo ti on t.Teacher_ID=ti.ID where t.ID=a.TeacherDetail_ID) as TeacherDetail_Name from W_Course a where a.ID in (select Course_ID from w_shoppingcar where Student_ID = #stuId#)
+    </select>
+
+    <delete id="MoveOutShoppingCar"  parameterClass="map">
+      delete from w_shoppingcar where Course_ID = #Course_ID# and Student_ID = #stuId#
+    </delete>
+    <delete id="ClearShoppingCar"  parameterClass="map">
+      delete from w_shoppingcar where Student_ID = #stuId#
+    </delete>
+
+    <select id="GetOrderListByStuId_TotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid="GetOrderListByStuId_Fragment"></include>
+    </select>
+    <select id="GetOrderListByStuId" resultClass="DataStoreProject.Model.ViewModel.OrderStudentModel" parameterClass="map">
+      select o.ID,o.OrderNo,o.PayPrice,o.PayTime,o.PayStatus,o.PayType,o.OrderState,o.Price,
+      (select COUNT(od.ID) from w_order_detail od where od.CID=o.ID) as PayCount
+      <include refid="GetOrderListByStuId_Fragment"></include>
+    </select>
+    <sql id="GetOrderListByStuId_Fragment">
+      from w_order o
+      left join s_studentinfo a on a.StuId=o.StuId
+      where o.StuId=#StuId# and o.OrderState = 0 and o.System_Station_ID = #System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="PayStatus">
+        o.PayStatus=#PayStatus#
+      </isGreaterThan>
+      order by o.PayTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetOrderDetailList" resultClass="DataStoreProject.Model.ViewModel.OrderDetailList" parameterClass="map">
+      <!--select od.ID,od.Price,od.IsDelete,o.OrderNo,c.`Name`,c.TotalHours,c.TeachingMethod,c.CoverPath,c.id as Course_ID from w_order_detail od
+      left join w_order o on o.ID=od.CID
+      left join w_course c on c.ID=od.Course_ID
+      where od.CID=#orderId# and c.Valid=1 and od.IsDelete = 0-->
+      select od.ID,od.Price,od.IsDelete,o.OrderNo,c.`Name`,c.TotalHours,c.TeachingMethod,c.CoverPath,c.id as Course_ID,t.`Name` teachName,t.JobTitle from w_order_detail od
+      left join w_order o on o.ID=od.CID
+      left join w_course c on c.ID=od.Course_ID
+      left join t_teacherinfo_detail td on td.ID = c.TeacherDetail_ID
+      left join t_teacherinfo t on t.ID = td.Teacher_ID
+      where od.CID=#orderId# and c.Valid=1 and od.IsDelete = 0;
+    </select>
+
+    <update id="DeleteOrderCourse" parameterClass="map">
+      update W_Order_Detail set IsDelete = 1 where ID = #orderDetailId#
+    </update>
+
+    <update id="DeleteOrderCourseByCID" parameterClass="map">
+      update W_Order_Detail set IsDelete = 1 where CID = #CID#
+    </update>
+
+    <select id="OrderByDetailId_Count" resultClass="int" parameterClass="map">
+      select count(1) as Counts from W_Order_Detail where CID = #CID# and IsDelete = 0
+    </select>
+    
+    <update id="UpdateW_OrderState" parameterClass="map">
+      update W_Order set OrderState = 1, Price = 0 where ID = #CID#
+    </update>
+    
+    <update id="UpdateW_OrderPrice" parameterClass="map">
+      update W_Order set Price = (select sum(Price) from W_Order_Detail where CID = #CID# and IsDelete = 0) where ID = #CID#
+    </update>
+  </statements>
+</sqlMap>

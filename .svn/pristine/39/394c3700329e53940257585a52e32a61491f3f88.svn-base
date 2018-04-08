@@ -1,0 +1,228 @@
+﻿using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.HConfiguration;
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
+using System.Web;
+using System.Web.Http;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class HConfigurationController : StationBaseApiController
+    {
+        HConfigurationMapper mapper = new HConfigurationMapper();
+        /// <summary>
+        /// 获取本站点学员设置的数据[系统配置通用] huangcuiju 20170812
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetConfiguration()
+        {
+            return Success(mapper.GetConfigurationByStationID(this.System_Station_ID));
+        }
+
+
+        /// <summary>
+        /// 学员设置 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetConfiguration1(H_Configuration model)
+        {
+            H_Configuration ret = mapper.GetConfigurationByStationID(this.System_Station_ID);
+            ret.RegisterProtocolValid = model.RegisterProtocolValid;
+            ret.RegisterType = model.RegisterType;
+            ret.RegisterValid = model.RegisterValid;
+
+            if (ret== null)  //添加
+            {
+                return Success(mapper.InsertConfiguration(model, this.System_Station_ID));
+
+            }
+            else  //修改
+            {
+                return Success(mapper.UpdateConfiguration(ret,this.System_Station_ID));
+            }
+        }
+
+        /// <summary>
+        /// 学员设置 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetConfiguration2(H_Configuration model)
+        {
+            H_Configuration ret = mapper.GetConfigurationByStationID(this.System_Station_ID);
+            ret.MultiOnline = model.MultiOnline;
+            ret.ThirdLoginValid = model.ThirdLoginValid;
+            ret.LoginPageConfig = model.LoginPageConfig;
+            ret.WxValid = model.WxValid;
+            ret.QQValid = model.QQValid;
+
+            if (ret == null)  //添加
+            {
+                return Success(mapper.InsertConfiguration(model, this.System_Station_ID));
+
+            }
+            else  //修改
+            {
+                return Success(mapper.UpdateConfiguration(ret, this.System_Station_ID));
+            }
+        }
+
+        /// <summary>
+        /// 学员设置 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetConfiguration3(H_Configuration model)
+        {
+            H_Configuration ret = mapper.GetConfigurationByStationID(this.System_Station_ID);
+            ret.QQAppID = model.QQAppID;
+            ret.QQAppKey = model.QQAppKey;
+
+            if (ret == null)  //添加
+            {
+                return Success(mapper.InsertConfiguration(model, this.System_Station_ID));
+
+            }
+            else  //修改
+            {
+                return Success(mapper.UpdateConfiguration(ret, this.System_Station_ID));
+            }
+        }
+
+        /// <summary>
+        /// 学员设置 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetConfiguration4(H_Configuration model)
+        {
+            H_Configuration ret = mapper.GetConfigurationByStationID(this.System_Station_ID);
+            ret.WxAppID = model.WxAppID;
+            ret.WxAppSecret = model.WxAppSecret;
+
+            if (ret == null)  //添加
+            {
+                return Success(mapper.InsertConfiguration(model, this.System_Station_ID));
+
+            }
+            else  //修改
+            {
+                return Success(mapper.UpdateConfiguration(ret, this.System_Station_ID));
+            }
+        }
+
+        /// <summary>
+        /// 获取本站点课程设置的数据[系统配置通用] 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetWConfiguration()
+        {
+            return Success(mapper.GetWConfiguration(this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 课程设置 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetWConfiguration1(W_Configuration model)
+        {
+            W_Configuration ret = mapper.GetWConfiguration(this.System_Station_ID);
+            ret.ValidPeriod = model.ValidPeriod;
+            if (model.ComDay != 0)
+            {
+                ret.ComDay = model.ComDay;
+            }
+            if (model.ComVideo != 0)
+            {
+                ret.ComVideo = model.ComVideo;
+            }
+            if (model.ComLive != 0)
+            {
+                ret.ComLive = model.ComLive;
+            }
+            if (ret == null)  //添加
+            {
+                return Success(mapper.InsertWConfiguration(model, this.System_Station_ID));
+            }
+            else  //修改
+            {
+                return Success(mapper.UpdateWConfiguration(ret, this.System_Station_ID));
+            }
+        }
+
+        /// <summary>
+        /// 课程设置 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetWConfiguration2(W_Configuration model)
+        {
+            W_Configuration ret = mapper.GetWConfiguration(this.System_Station_ID);
+         
+            ret.CommentValid = model.CommentValid;
+
+            if (ret == null)  //添加
+            {
+                return Success(mapper.InsertWConfiguration(model, this.System_Station_ID));
+            }
+            else  //修改
+            {
+                return Success(mapper.UpdateWConfiguration(ret, this.System_Station_ID));
+            }
+        }
+
+        /// <summary>
+        /// 课程设置 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetWConfiguration3(W_Configuration model)
+        {
+            W_Configuration ret = mapper.GetWConfiguration(this.System_Station_ID);
+
+            ret.QuestionValid = model.QuestionValid;
+            ret.QuestionReplyType = model.QuestionReplyType;
+            ret.QuestionLookType = model.QuestionLookType;
+
+            if (ret == null)  //添加
+            {
+                return Success(mapper.InsertWConfiguration(model, this.System_Station_ID));
+            }
+            else  //修改
+            {
+                return Success(mapper.UpdateWConfiguration(ret, this.System_Station_ID));
+            }
+        }
+
+        /// <summary>
+        /// 课程设置 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetWConfiguration4(W_Configuration model)
+        {
+            W_Configuration ret = mapper.GetWConfiguration(this.System_Station_ID);
+
+            ret.OverFlowTime = model.OverFlowTime;
+            ret.OverFlowInfo = model.OverFlowInfo;
+            ret.OverFlowAuth = model.OverFlowAuth;
+            ret.UserSeeAuth = model.UserSeeAuth;
+
+            if (ret == null)  //添加
+            {
+                return Success(mapper.InsertWConfiguration(model, this.System_Station_ID));
+            }
+            else  //修改
+            {
+                return Success(mapper.UpdateWConfiguration(ret, this.System_Station_ID));
+            }
+        }
+    }
+}

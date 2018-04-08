@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetCourseWareListTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetCourseWareList_Fragment"></include>
+    </select>
+    <select id="GetCourseWareList" resultClass="DataStoreProject.Model.ViewModel.W_CourseWareModel" parameterClass="map">
+      select  *,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,(select Name from w_discipline as b where a.Discipline_ID=b.ID) as Discipline_Name  
+      <include refid ="GetCourseWareList_Fragment"></include>
+    </select>
+
+    <sql id="GetCourseWareList_Fragment">
+      from  W_CourseWare as a  where  System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        Valid=#Valid#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="CourseWareType_ID">
+        CourseWareType_ID=#CourseWareType_ID#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="Discipline_ID">
+        Discipline_ID in (SELECT ID FROM w_discipline WHERE FIND_IN_SET(ID,GetChildList(#Discipline_ID#,'w_discipline')))
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="Status">
+        Status=#Status#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Tag">
+        `Tag` = #Tag#
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="Name">
+        ( Name like concat('%',#Name#,'%')  or PolyvVID  like concat('%',#Name#,'%'))
+      </isNotEmpty>
+      ORDER BY valid desc, ID desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetClassRoomByID" resultClass="map" parameterClass="map">
+      select  a.*,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,c.Name as CampusName   from  W_ClassRoom as a inner join w_campus as c on a.CampusID=c.ID  where a.ID=#ID#  and  a.System_Station_ID=#System_Station_ID#
+    </select>
+
+    <update id="UpdateStatus"  parameterClass="map">
+      update   W_CourseWare  set Status=#Status#
+      <isGreaterThan compareValue="0"  property="Duration">
+        ,Duration=#Duration#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0"  property="CourseSize">
+        ,CourseSize=#CourseSize#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0"  property="ID">
+        where   ID =#ID#
+      </isGreaterThan>
+      <isEqual property="ID" compareValue="0">
+        where   PolyvVID =#PolyvVID#
+      </isEqual>
+    </update>
+    
+    <select id="GetCourseWareModel1" resultClass="DataStoreProject.Model.ViewModel.W_CourseWareModel" parameterClass="map">
+      select  *,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,
+      (select Name from w_discipline as b where a.Discipline_ID=b.ID) as Discipline_Name,
+      (select OverFlowTime from  w_configuration where System_Station_ID=#System_Station_ID#) as OverFlowTime
+      from  W_CourseWare  as a where ID=#ID#  and  System_Station_ID=#System_Station_ID#
+    </select>
+
+    <select id="GetCourseWareModel2" resultClass="DataStoreProject.Model.ViewModel.W_CourseWareModel" parameterClass="map">
+      select  a.*,c.IsOpen,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName
+      ,(select Name from w_discipline as b where a.Discipline_ID=b.ID) as Discipline_Name
+      ,(select OverFlowTime from  w_configuration where System_Station_ID=#System_Station_ID#) as OverFlowTime,
+      (select COUNT(0) from  w_order as oa inner join w_order_detail as ob on oa.ID=ob.CID where oa.StuId=#StuId#
+      and ob.Course_ID=b.ID and oa.System_Station_ID=#System_Station_ID# and oa.PayStatus=1 and ob.IsDelete = 0) as IsPay
+      from  w_course as b INNER JOIN w_course_chapters as c on b.ID=c.Course_ID INNER JOIN W_CourseWare  as a  on c.CourseWare_ID=a.ID
+      where   b.System_Station_ID=#System_Station_ID#  and  a.PolyvVID!='' AND b.ID=#Course_ID#   and c.ID=#ID#
+    </select>
+  </statements>
+</sqlMap>

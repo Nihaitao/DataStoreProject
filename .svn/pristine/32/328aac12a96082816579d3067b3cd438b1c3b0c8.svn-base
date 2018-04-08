@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetHDictionartyByColumnName" resultClass="map" parameterClass="map">
+      SELECT * FROM (SELECT
+      t.Dictionary_ID ID,
+      s.ColumnName ColumnName,
+      t.System_Station_ID,
+      t.Description,
+      t.Valid,
+      t.IsDelete,
+      t.SortID,
+      s.Editable,
+      (SELECT System_Station_ID FROM h_dictionary h WHERE h.ID=t.Dictionary_ID ) as IsSystemField
+      FROM
+      h_dictionary_detail AS t
+      LEFT JOIN h_dictionary s on t.Dictionary_ID=s.ID ) a
+      WHERE 1=1 AND a.IsDelete=0 AND (a.System_Station_ID=#System_Station_ID# or a.System_Station_ID=0) AND a.ColumnName=#ColumnName#
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        a.Valid=#Valid#
+      </isGreaterThan>
+      ORDER BY a.SortID
+    </select>
+
+    <select id="GetAllHDictionaryList" resultClass="DataStoreProject.Model.Entity.Dictionary.H_Dictionary" parameterClass="map">
+      SELECT
+      t.ID,
+      t.ColumnName,
+      t.Description Description,
+      t.Valid Valid,
+      t.IsDelete IsDelete,
+      t.SortID SortID,
+      t.System_Station_ID System_Station_ID,
+      t.Editable
+      FROM
+      h_dictionary t
+      WHERE t.IsDelete=0 AND  (t.System_Station_ID=#System_Station_ID# or t.System_Station_ID=0 ) AND t.ColumnName=#ColumnName# ORDER BY t.SortID
+    </select>
+
+    <select id="GetHictionartyDetailByColumnName" resultClass="DataStoreProject.Model.Entity.Dictionary.H_Dictionary" parameterClass="map">
+      SELECT * FROM (SELECT t.Dictionary_ID ID,
+      s.ColumnName ColumnName,
+      t.System_Station_ID,
+      t.Description,
+      t.SortID,
+      (SELECT System_Station_ID FROM h_dictionary h WHERE h.ID=t.Dictionary_ID ) as IsSystemField
+      FROM
+      h_dictionary_detail AS t
+      LEFT JOIN h_dictionary s on t.Dictionary_ID=s.ID ) a
+      WHERE 1=1 AND (a.System_Station_ID=#System_Station_ID# or a.System_Station_ID=0) AND a.ColumnName=#ColumnName#
+      ORDER BY a.SortID
+    </select>
+    <select id="GetPolyvInfoByWhere" resultClass="map" parameterClass="map">
+      SELECT  * from w_polyvinfo  where System_Station_ID=#System_Station_ID#
+    </select>
+
+    <select id="GetStudentInfoListTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetStudentInfoList_Fragment"></include>
+    </select>
+    <select id="GetStudentInfoList" resultClass="map" parameterClass="map">
+      select a.StuID,a.Name,a.CardNumber,b.Phone,a.Sex,a.AddTime,a.HomeAddress,a.Nation,n.`Name` as NationName,a.Police,a.EffDate,a.ExpDate,
+      b.Education_ID,d.Description as EducationName,b.System_Station_ID,s.`Name` as System_StationName
+      <include refid ="GetStudentInfoList_Fragment"></include>
+    </select>
+
+    <sql id="GetStudentInfoList_Fragment">
+      from s_studentinfo a
+      left join s_studentinfo_station b on a.StuID=b.StuID
+      left join h_dictionary d on d.ID=b.Education_ID
+      left join h_station s on s.ID=b.System_Station_ID
+      left JOIN h_nation n on a.Nation=n.ID
+      where 1=1
+      <isGreaterThan compareValue="0" prepend="and" property="System_Station_ID">
+         b.System_Station_ID = #System_Station_ID#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Name">
+        a.Name like concat('%',#Name#,'%')
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="CardNumber">
+        a.CardNumber like concat('%',#CardNumber#,'%')
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="Phone">
+        b.Phone like concat('%',#Phone#,'%')
+      </isNotEmpty>
+      <isGreaterThan compareValue="-1" prepend="and" property="Education_ID">
+        b.Education_ID = #Education_ID#
+      </isGreaterThan>
+      order by a.AddTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+
+    <select id="GetModelByCardNumberBit" resultClass="map" parameterClass="map">
+      select a.StuID,a.Name,a.CardNumber,b.Phone,b.System_Station_ID from s_studentinfo a left join s_studentinfo_station b on a.StuID=b.StuID where a.CardNumber is not  NULL and a.CardNumber !='' and
+      (b.Phone=#Phone#   or a.CardNumber=#CardNumber#)
+    </select>
+  </statements>
+</sqlMap>

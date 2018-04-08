@@ -1,0 +1,228 @@
+﻿using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using DataStoreProject.Model.Entity;
+using DataStoreProject.Model.Entity.Course_Comment;
+using DataStoreProject.Model.ViewModel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataStoreProject.Business
+{
+    public class CourseInterlocutionMapper : BaseMapper
+    {
+        /// <summary>
+        /// 查询问答列表
+        /// </summary>
+        /// <param name="Discipline_ID">科目ID</param>
+        /// <param name="Course_ID">网课ID</param>
+        /// <param name="page"></param>
+        /// <returns></returns>
+        public List<CInterlocutionModel> GetInterlocutionListByCuId(CampusModel model, int System_Station_ID)
+        {
+            List<CInterlocutionModel> list = SqlMapper.QueryForList<CInterlocutionModel>("GetInterlocutionListByCuId", new { System_Station_ID = System_Station_ID, Course_ID = model.Course_ID, Discipline_ID = model.Discipline_ID, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+            //最近回复
+            List<CNewInterlocution> newList = SqlMapper.QueryForList<CNewInterlocution>("GetNewInterlocution", new { System_Station_ID = System_Station_ID, Course_ID = model.Course_ID, Discipline_ID = model.Discipline_ID }).ToList();
+            CNewInterlocution Slist = new CNewInterlocution();
+            Slist.ReplyContent = "";
+            Slist.AddReplyTime = "";
+            foreach (CInterlocutionModel item in list)
+                item.NewInterlocution = newList.Where(x => x.PID == item.ID).OrderByDescending(x => x.AddReplyTime).FirstOrDefault() == null ? Slist : newList.Where(x => x.PID == item.ID).OrderByDescending(x => x.AddReplyTime).FirstOrDefault();
+            return list;
+        }
+
+        /// <summary>
+        /// 查询问答列表总条数
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public int GetInterlocutionListByCuIdCount(CampusModel model, int System_Station_ID)
+        {
+            return SqlMapper.QueryForObject<int>("GetInterlocutionListByCuIdCount", new { System_Station_ID = System_Station_ID, Course_ID = model.Course_ID, Discipline_ID = model.Discipline_ID, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 查询我的问答列表
+        /// </summary>
+        /// <param name="Discipline_ID">科目ID</param>
+        /// <param name="Course_ID">网课ID</param>
+        /// <param name="page"></param>
+        /// <returns></returns>
+        public dynamic GetMyCourseInterlocution(PageModel model, string StuId, int System_Station_ID)
+        {
+            List<InterlocutionModel> list = SqlMapper.QueryForList<InterlocutionModel>("GetMyCourseInterlocution", new { System_Station_ID = System_Station_ID, StudentID = StuId, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+
+            List<NewInterlocution> newList = SqlMapper.QueryForList<NewInterlocution>("GetMyNewInterlocution", new { System_Station_ID = System_Station_ID }).ToList();
+
+            foreach (InterlocutionModel item in list)
+                item.NewInterlocution = newList.Where(x => x.PID == item.ID).OrderByDescending(x => x.AddTime).FirstOrDefault();
+
+            return list;
+        }
+
+        /// <summary>
+        /// 查询我的问答列表总数
+        /// </summary>
+        /// <param name="Discipline_ID">科目ID</param>
+        /// <param name="Course_ID">网课ID</param>
+        /// <param name="page"></param>
+        /// <returns></returns>
+        public dynamic GetMyCourseInterlocutionCount(PageModel model, string StuId, int System_Station_ID)
+        {
+            return SqlMapper.QueryForObject<int>("GetMyCourseInterlocutionCount", new { System_Station_ID = System_Station_ID, StudentID = StuId, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 删除问答 by nht 2017-08-16
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public dynamic DeleteCourseInterlocution(CampusModel model)
+        {
+            return SqlMapper.Delete("DeleteCourseInterlocution", new { Ids = model.Ids });
+        }
+
+        /// <summary>
+        /// 查询问答列表 by nht 2017-08-16
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public List<InterlocutionModel> GetCourseInterlocutionList(int PID, int System_Station_ID)
+        {
+            return SqlMapper.QueryForList<InterlocutionModel>("GetCourseInterlocutionList", new { PID = PID, System_Station_ID = System_Station_ID }).ToList();
+        }
+
+        /// <summary>
+        ///查询评论列表 by nht 2017-08-16
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public List<CommentModel> GetCourseCommentList(CampusModel model, int System_Station_ID)
+        {
+            return SqlMapper.QueryForList<CommentModel>("GetCourseCommentList", new { Course_ID = model.Course_ID,Valid=model.Valid, System_Station_ID = System_Station_ID, Discipline_ID = model.Discipline_ID, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+        }
+
+        /// <summary>
+        /// 查询评论列表总条数
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public int GetCourseCommentListCount(CampusModel model, int System_Station_ID)
+        {
+            return SqlMapper.QueryForObject<int>("GetCourseCommentListCount", new { Course_ID = model.Course_ID,Valid=model.Valid, System_Station_ID = System_Station_ID, Discipline_ID = model.Discipline_ID, pageStatus = 0 });
+        }
+
+        /// <summary>
+        ///查询我的评论列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public List<CommentModel> GetMyCourseComment(PageModel model, string StuId)
+        {
+            return SqlMapper.QueryForList<CommentModel>("GetMyCourseComment", new { StudentID=StuId ,pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+        }
+
+        /// <summary>
+        ///查询我的评论列表总数
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public int GetMyCourseCommentCount(PageModel model, string StuId)
+        {
+            return SqlMapper.QueryForObject<int>("GetMyCourseCommentCount", new { StudentID = StuId, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 删除评论 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public bool DeleteCourseComment(CampusModel model)
+        {
+            return SqlMapper.Delete("DeleteCourseComment", new { Ids = model.Ids }) > 0;
+        }
+
+        /// <summary>
+        /// 启用禁用评论 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public dynamic UpdataCommentValid(CampusModel model, int System_Station_ID)
+        {
+            return SqlMapper.Update("UpdataCommentValid", new { ID = model.Ids, Valid = model.Valid });
+        }
+
+        /// <summary>
+        /// 添加评论 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public dynamic AddCourseComment(W_Course_Comment model, string StuId)
+        {
+            model.AddTime = DateTime.Now;
+            model.Student_ID = StuId;
+            model.Valid = 1;
+            if (Orm.Insert<W_Course_Comment>(model) <= 0)
+            {
+                throw new ApiException("添加失败，请重试");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// //点赞&取消点赞
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public dynamic UpdateCommentThumbsup(CampusModel model, string StuId)
+        {
+            W_Comment_Thumbsup ThumbsupModel = Orm.Single<W_Comment_Thumbsup>(x => x.Comment_ID == model.Comment_ID && x.Student_ID == StuId);
+            if (ThumbsupModel == null)
+            {
+                W_Comment_Thumbsup Model = new W_Comment_Thumbsup();
+                Model.Comment_ID = model.Comment_ID;
+                Model.Student_ID = StuId;
+                Model.AddTime = DateTime.Now;
+                return Orm.Insert<W_Comment_Thumbsup>(Model);
+            }
+            else
+            {
+                return Orm.Delete<W_Comment_Thumbsup>(x => x.Student_ID == StuId && x.Comment_ID == model.Comment_ID);
+            }
+        }
+
+        /// <summary>
+        /// 添加问答 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public dynamic AddCourseInterlocution(W_Course_Interlocution model, string StuId, int AccountID)
+        {
+            model.AddTime = DateTime.Now;
+            model.Student_ID = StuId;
+            if (Orm.Insert<W_Course_Interlocution>(model) <= 0)
+            {
+                throw new ApiException("添加失败，请重试");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 添加回复
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public dynamic AddContent(W_Course_Interlocution model, string StuId, int AccountID)
+        {
+            model.AddTime = DateTime.Now;
+            model.Account_ID = AccountID;
+            if (Orm.Insert<W_Course_Interlocution>(model) <= 0)
+            {
+                throw new ApiException("添加失败，请重试");
+            }
+            return true;
+        }
+    }
+}

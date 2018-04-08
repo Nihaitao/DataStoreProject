@@ -1,0 +1,95 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.Entity.DataInfo;
+
+namespace DataStoreProject.Business
+{
+    public class ChaptersMapper : BaseMapper
+    {
+
+        public IList GetChaptersList(int QuestionStore_ID)
+        {
+            return QueryForList("selectChapters", new { QuestionStore_ID = QuestionStore_ID });
+        }
+
+        public bool AddChapters(W_Chapters model)
+        {
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+
+                var id = session.Insert(model);
+                if (id > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool UpdateChapters(W_Chapters model)
+        {
+            if (model == null)
+            {
+                throw new ApiException("对象错误");
+                //当出现异常后，可以直接抛ApiException，拦截器将会拦截异常，并格式化输出
+            }
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+                var id = session.Update(model);
+                if (id > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        public bool DeleteChapters(int ID)
+        {
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+                var id = session.Delete<W_Chapters>(x => x.ID == ID);
+                if (id > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public dynamic Enabledisable(int ID, int Valid)
+        {
+            if (Valid == 1)
+            {
+                return Orm.Update<W_Chapters>(new W_Chapters()
+                 {
+                     Valid = 0,
+                     ID = ID
+                 });
+            }
+            else
+            {
+                return Orm.Update<W_Chapters>(new W_Chapters()
+                {
+                    Valid = 1,
+                    ID = ID
+                });
+            }
+        }
+    }
+}

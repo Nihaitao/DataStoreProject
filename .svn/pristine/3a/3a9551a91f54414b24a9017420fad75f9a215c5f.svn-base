@@ -1,0 +1,99 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
+using CommonFramework;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet.SqlMap;
+using CommonFramework.Mvc;
+using CommonFramework.Mvc.Attribute;
+using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.DataInfo;
+namespace DataStoreProject.Web.Controller
+{
+    public class DataInfoController : StationBaseApiController
+    {
+        
+        [HttpGet] 
+        ///获取全部资料列表
+        public dynamic GetDatainfoList()
+        {
+            DataInfoMapper mapper = new DataInfoMapper();
+            var id = this.System_Station_ID;
+            var dict = mapper.GetDatainfoList(id);
+            return Success(dict,dict.Count);
+        }
+
+        [HttpPost] 
+        //添加资料
+        public dynamic AddDatainfo(W_DataInfo model)
+        {
+            if (model != null)
+            {
+                model.AddPerson = this.AccountID;
+                model.AddTime = DateTime.Now.ToString();
+                model.System_Station_ID = this.System_Station_ID;
+                DataInfoMapper mapper = new DataInfoMapper();
+                var dict = mapper.AddDataInfo(model);
+                if(dict)
+                    return Success("操作成功");
+                else
+                    return Success("操作失败");
+            }
+            else 
+            {
+                return Success("操作失败");
+            }
+        }
+
+        [HttpPost]
+        public dynamic UpdateDatainfo(W_DataInfo model)
+        {
+            if (model != null)
+            {
+                model.System_Station_ID = this.System_Station_ID;
+
+                DataInfoMapper mapper = new DataInfoMapper();
+
+                if (mapper.UpdateDataInfo(model))
+                    return Success("操作成功");
+                else
+                    return Success("操作失败");
+            }
+            else 
+            {
+                return Success("操作失败");
+            }
+        }
+
+        [HttpPost]
+        public dynamic DeleteDatainfo(int ID)
+        {
+            DataInfoMapper mapper = new DataInfoMapper();
+
+            if (mapper.DeleteDataInfo(ID))
+                return Success("操作成功");
+            else
+                return Success("操作失败");
+        }
+
+        [HttpGet]
+        public dynamic GetDownInfo(int ID)
+        {
+            DataInfoMapper mapper = new DataInfoMapper();
+            var dict = mapper.GetDownInfo(ID);
+            dict.DownCount = dict.DownCount + 1;
+            if (mapper.UpdateDataInfo(dict))
+            {
+                return Success(dict);
+            }
+            else 
+            {
+                return Success("下载失败");
+            }
+        }
+    }
+}

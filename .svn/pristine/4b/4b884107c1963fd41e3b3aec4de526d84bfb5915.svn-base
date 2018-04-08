@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetCampusListTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="selectGetCampusList_Fragment"></include>
+    </select>
+    <select id="GetCampusList" resultClass="map" parameterClass="map">
+      select  *,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName   from  
+      <include refid ="GetCampusList_Fragment"></include>
+    </select>
+
+    <sql id="GetCampusList_Fragment">
+      W_Campus as a  where  System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        Valid=#Valid#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Name">
+        `Name` like concat('%',#Name#,'%')
+      </isNotEmpty>
+      order by Valid desc,ID asc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetClassRoomByID" resultClass="map" parameterClass="map">
+      select  a.*,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName,c.Name as CampusName   from  W_ClassRoom as a inner join w_campus as c on a.CampusID=c.ID  where a.ID=#ID#  and  a.System_Station_ID=#System_Station_ID#
+    </select>
+  </statements>
+</sqlMap>

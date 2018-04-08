@@ -1,0 +1,320 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.Entity.Chapters;
+using DataStoreProject.Model.Entity.Question;
+using DataStoreProject.Model.Entity.ExamPaper;
+using DataStoreProject.Model.Entity;
+using DataStoreProject.Model.ViewModel;
+using DataStoreProject.Model.Entity.Discipline;
+using DataStoreProject.Model.Entity.Campus;
+using System.Web.Script.Serialization;
+
+
+namespace DataStoreProject.Business
+{
+    public class ResourceMapper : BaseMapper
+    {
+        /// <summary>
+        /// 根据对应条件查询课件数据
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public IList GetCourseWareList(CourseWareModel model, int System_Station_ID)
+        {
+            List<W_CourseWareModel> list = SqlMapper.QueryForList<W_CourseWareModel>("GetCourseWareList", new { System_Station_ID = System_Station_ID, Status = model.Status, Valid = model.Valid, Tag = model.Tag, Name = model.Name, CourseWareType_ID = model.CourseWareType_ID, Discipline_ID = model.Discipline_ID, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+            if (list != null && list.Count > 0)
+            {
+                list.ForEach(X =>
+                {
+                    //秒转时间格式
+                    if (X.Duration > 0)
+                        X.DurationS = GetTurnSecondTime(X.Duration);
+                    else
+                        X.DurationS = "00:00:00";
+
+                    //转化字节
+                    if (X.CourseSize > 0)
+                        X.CourseSizeS = HumanReadableFilesize(X.CourseSize);
+                });
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// 根据对应条件查询课件数据总条数
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public int GetCourseWareListTotalCount(CourseWareModel model, int System_Station_ID)
+        {
+            return SqlMapper.QueryForObject<int>("GetCourseWareListTotalCount", new { System_Station_ID = System_Station_ID, Status = model.Status, Valid = model.Valid, Tag = model.Tag, Name = model.Name, CourseWareType_ID = model.CourseWareType_ID, Discipline_ID = model.Discipline_ID, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 启用禁用课件
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public dynamic UpdateValid(CourseWareModel model, int System_Station_ID)
+        {
+            W_CourseWare CourseWareModel = Orm.Single<W_CourseWare>(x => x.ID == model.ID && x.System_Station_ID == System_Station_ID);
+            if (CourseWareModel == null) 
+            {
+                throw new ApiException("操作失败，未找到操作数据，请刷新重试");
+            }
+            CourseWareModel.Valid = model.Valid;
+
+            if (Orm.Update(CourseWareModel)<=0) 
+            {
+                throw new ApiException("操作失败，请重新操作");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 更新播放次数
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public dynamic GetUpdatePlayCount(int ID, int System_Station_ID)
+        {
+            W_CourseWare model= Orm.Single<W_CourseWare>(x => x.ID == ID && x.System_Station_ID==System_Station_ID);
+            if (model == null) 
+            {
+                throw new ApiException("未找到对应数据");
+            }
+            model.PlayCount = model.PlayCount + 1;
+            if (Orm.Update(model) <= 0) 
+            {
+                throw new ApiException("修改失败");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 删除课件
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public dynamic DeleteCourseWare(CourseWareModel model, int System_Station_ID)
+        {
+            W_CourseWare CourseWareModel = Orm.Single<W_CourseWare>(x => x.ID == model.ID && x.System_Station_ID == System_Station_ID);
+            if (CourseWareModel == null)
+            {
+                throw new ApiException("操作失败，未找到操作数据，请刷新重试");
+            }
+            W_Course_Chapters chaptersmodel = Orm.Single<W_Course_Chapters>(x => x.CourseWare_ID==model.ID && x.System_Station_ID==System_Station_ID);
+
+            if (chaptersmodel != null) 
+            {
+                throw new ApiException("章节应用了该课件，请先删除课件");
+            }
+            return Orm.Delete(CourseWareModel);
+        }
+
+        /// <summary>
+        /// 更新视频状态
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public dynamic UpdateStatus(W_CourseWare model, int System_Station_ID)
+        {
+            W_CourseWare CourseWareModel = Orm.Single<W_CourseWare>(x => x.ID == model.ID && x.System_Station_ID == System_Station_ID);
+            if (CourseWareModel == null)
+            {
+                throw new ApiException("操作失败，未找到操作数据，请刷新重试");
+            }
+
+            if (model.Status == 7)
+            {
+                PolyvInfoMapper bll = new PolyvInfoMapper();
+                PolyvInfoModel PolyvModel = bll.GetPolyvSetByWhere(System_Station_ID);
+                if (PolyvModel == null)
+                {
+                    throw new ApiException("资源上传目录未设置，请先设置！");
+                }
+                else
+                {
+                    if (PolyvModel.Valid == 0)
+                    {
+                        throw new ApiException("资源上传设置未开启，请先开启！");
+                    }
+                }
+
+                try
+                {
+                    //string readtoken = "88cb627e-0bf2-4b64-833f-3e8e60a9f8e8";
+                    //string secretkey = "UfmKG8jJ82";
+                    string readtoken = PolyvModel.readtoken;
+                    string secretkey = PolyvModel.secretkey;
+                    string signn = string.Format("readtoken={0}&vid={1}{2}", readtoken, CourseWareModel.PolyvVID, secretkey);
+                    string Sign = System.Web.Security.FormsAuthentication.HashPasswordForStoringInConfigFile(signn, "sha1");
+
+                    string postData = string.Format("readtoken={0}&vid={1}&sign={2}", readtoken, CourseWareModel.PolyvVID, Sign);
+
+                    string Url = "http://v.polyv.net/uc/services/rest?method=getById&readtoken=" + readtoken + "&vid=" + CourseWareModel.PolyvVID + "&sign=" + Sign;
+                    string result = bll.doGet(Url);
+
+                    JavaScriptSerializer jss = new JavaScriptSerializer();
+                    PlayModelData Json = jss.Deserialize<PlayModelData>(result);
+                    DateTime dt = DateTime.Parse(Json.data[0].duration);
+                    model.Duration = dt.Hour * 60 * 60 + dt.Minute * 60 + dt.Second;
+
+                    //if (Json.data[0].filesize.Length > 0)
+                    //    CourseSize = Json.data[0].filesize[Json.data[0].filesize.Length - 1].ToInt(0);
+                    model.CourseSize = Convert.ToInt64(Json.data[0].source_filesize);
+                }
+                catch (Exception)
+                {
+
+
+                }
+            }
+            return SqlMapper.Update("UpdateStatus", new { PolyvVID = model.PolyvVID, Status = model.Status, Duration = model.Duration, CourseSize = model.CourseSize, ID = model.ID });
+        }
+
+        /// <summary>
+        /// 根据课件id查找对应数据
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <param name="System_Station_ID"></param>
+        /// <returns></returns>
+        public W_CourseWareModel GetCourseWareByID(W_CourseWareModel Model,string StuId ,int System_Station_ID)
+        {
+            string sql = string.Empty;
+            W_CourseWareModel CourseWareModel = new W_CourseWareModel();
+            if (string.IsNullOrEmpty(StuId))
+            {
+                CourseWareModel = SqlMapper.QueryForObject<W_CourseWareModel>("GetCourseWareModel1", new { ID = Model.ID, System_Station_ID = System_Station_ID });
+            }
+            else 
+            {
+                CourseWareModel = SqlMapper.QueryForObject<W_CourseWareModel>("GetCourseWareModel2", new { ID = Model.ID, Course_ID = Model.Course_ID, System_Station_ID = System_Station_ID, StuId = Model.StuId });
+            }
+            if (CourseWareModel != null && CourseWareModel.Discipline_ID > 0)
+            {
+                //获取一级 二级 三级学科ID
+                DisciplineIDModel DisciplineModel = new DisciplineMapper().GetDisciplineIDS(CourseWareModel.Discipline_ID);
+                if (DisciplineModel != null)
+                {
+                    CourseWareModel.Discipline_OneLevelID = DisciplineModel.Discipline_OneLevelID;//一级学科ID
+                    CourseWareModel.Discipline_TwoLevelID = DisciplineModel.Discipline_TwoLevelID;//二级学科ID
+                    CourseWareModel.Discipline_ThreeLevelID = DisciplineModel.Discipline_ThreeLevelID;//三级学科ID
+                }
+
+                //秒转时间格式
+                if (CourseWareModel.Duration > 0)
+                    CourseWareModel.DurationS = GetTurnSecondTime(CourseWareModel.Duration);
+                else
+                    CourseWareModel.DurationS = "00:00:00";
+
+                //字节转换KB  MB GB
+                if (CourseWareModel.CourseSize > 0)
+                    CourseWareModel.CourseSizeS = HumanReadableFilesize(CourseWareModel.CourseSize);
+
+            }
+            if (CourseWareModel == null)
+            {
+                throw new ApiException("操作失败，未找到对应的数据！");
+            }
+            return CourseWareModel;
+        }
+        /// <summary>
+        /// 添加修改课件
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <param name="System_Station_ID"></param>
+        /// <param name="AccountID"></param>
+        /// <returns></returns>
+        public dynamic SaveCourseWare(W_CourseWare Model, int System_Station_ID, int AccountID) 
+        {
+            if (Model.ID > 0)
+            {
+                W_CourseWare model= Orm.Single<W_CourseWare>(x => x.ID == Model.ID && x.System_Station_ID == System_Station_ID);
+                if (model == null) 
+                {
+                    throw new ApiException("您要修改的数据不存在");
+                }
+                Model.AddPerson = model.AddPerson;
+                Model.AddTime = model.AddTime;
+                if (Orm.Update(Model) <= 0)
+                {
+                    throw new ApiException("修改失败");
+                }
+            }
+            else
+            {
+                Model.System_Station_ID = System_Station_ID;
+                Model.AddTime = DateTime.Now;
+                Model.Valid = 1;
+                Model.Status = 0;
+                Model.Duration = 0;
+                Model.PlayCount = 0;
+
+                Model.AddPerson = AccountID;
+                //去掉后缀
+                if (Model.Name != null && Model.Name.Contains("."))
+                    Model.Name = Model.Name.Split('.')[0];
+
+                int count = SqlMapper.QueryForObject<int>("GetW_CourseWareCount", new { PolyvVID = Model.PolyvVID });
+                if (count > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    if (Orm.Insert(Model) <= 0)
+                    {
+                        throw new ApiException("添加失败");
+                    }
+                    return true;
+                }
+            }
+            return true;
+        }
+
+
+         /// <summary>
+        /// 秒转时间格式
+        /// </summary>
+        /// <returns></returns>
+        public string GetTurnSecondTime(int Duration)
+        {
+            TimeSpan a = new TimeSpan(0, 0, Duration);
+            string times = a.ToString();
+            //string times = string.Format("{0}:{1}:{2}", a.Hours, a.Minutes, a.Seconds);
+            return times;
+        }
+
+
+        /// <summary>  
+        ///   字节转换KB  MB GB
+        /// </summary>  
+        /// <param name="size">字节值</param>  
+        /// <returns></returns>  
+        private string HumanReadableFilesize(long KSize)
+        {
+            int GB = 1024 * 1024 * 1024;//定义GB的计算常量
+            int MB = 1024 * 1024;//定义MB的计算常量
+            int KB = 1024;//定义KB的计算常量
+            if (KSize / GB >= 1)//如果当前Byte的值大于等于1GB
+                return (Math.Round(KSize / (float)GB, 2)).ToString() + "GB";//将其转换成GB
+            else if (KSize / MB >= 1)//如果当前Byte的值大于等于1MB
+                return (Math.Round(KSize / (float)MB, 2)).ToString() + "MB";//将其转换成MB
+            else if (KSize / KB >= 1)//如果当前Byte的值大于等于1KB
+                return (Math.Round(KSize / (float)KB, 2)).ToString() + "KB";//将其转换成KGB
+            else
+                return KSize.ToString() + "Byte";//显示Byte值
+
+        }
+
+       
+    }
+}

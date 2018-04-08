@@ -1,0 +1,172 @@
+﻿using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.Discipline;
+using DataStoreProject.Model.ViewModel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Http;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class DisciplineController : StationBaseApiController
+    {
+
+        DisciplineMapper mapper = new DisciplineMapper();
+        /// <summary>
+        ///  根据学科id 查找学科
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetDisciplineByID(int ID)
+        {
+            var model = mapper.GetDisciplineByID(ID, this.System_Station_ID);
+            return Success(model);
+        }
+
+        /// <summary>
+        /// 是否推荐学科
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetIsRecommend(int ID, int Recommend)
+        {
+            var model = mapper.GetIsRecommend(ID, Recommend, this.System_Station_ID);
+
+            return Success(model ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 查询所有的学科
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetAllDiscipline([FromUri]CampusModel Model)
+        {
+            return Success(mapper.GetAllDiscipline(Model, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 查询所有包含章节或者试卷的学科
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetAllDisciplineForStudent()
+        {
+            return Success(mapper.GetAllDisciplineForStudent(this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 拖拽排序（拖拽完就保存）
+        /// </summary>
+        /// <param name="new_prev_order">拖拽后上节点排序值</param>
+        /// <param name="currDisciplineId">当前被拖拽ID</param>
+        /// <param name="currParentId">当前被拖拽ID的父ID</param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SortDiscipline(SortDisciplineModel model)
+        {
+            return Success(mapper.SortDiscipline(model, System_Station_ID));
+
+        }
+
+
+        /// <summary>
+        /// 拖拽排序（拖拽完就保存）
+        /// 使用要求（1.排序值只能是唯一的，如果有多个排序值，排序方法实现不了。2.添加方法必须SaveDiscipline的排序值Orders必须是不能为空，需要根据当前Orders的最大值加上1进行给定。）
+        /// </summary>
+        /// <param name="new_prev_order">拖拽后上节点排序值</param>
+        /// <param name="currDisciplineId">当前被拖拽ID</param>
+        /// <param name="currParentId">当前被拖拽ID的父ID</param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic MoveDiscipline(SortDisciplineModel model)
+        {
+            return Success(mapper.MoveDiscipline(model, System_Station_ID));
+
+        }
+
+        /// <summary>
+        /// 删除学科及对应的关系表 DeleteDiscipline
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic RemoveDiscipline(CampusModel model)
+        {
+            return Success(mapper.RemoveDiscipline(model.ID, this.System_Station_ID) ? "操作成功" : "操作失败");
+        }
+
+        /// <summary>
+        /// 添加 or 修改学科
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SaveDiscipline(W_Discipline Model)
+        {
+           return Success(mapper.SaveDiscipline(Model,this.System_Station_ID,this.AccountID));
+        }
+
+        /// <summary>
+        /// 禁用、启用学科
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetDisciplineValid(W_Discipline Model)
+        {
+            return Success(mapper.SetDisciplineValid(Model, this.System_Station_ID));
+        }
+
+         /// <summary>
+        /// 根据学科父节点获得学科子节点
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetDisciplineWithCID(int CID = 0)
+        {
+            return Success(mapper.GetDisciplineWithCID(this.System_Station_ID,CID));
+        }
+
+        /// <summary>
+        /// 获得有网课的学科
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetDisciplineWithWebCourse()
+        {
+            return Success(mapper.GetDisciplineWithWebCourse(this.System_Station_ID));
+        }
+
+
+        /// <summary>
+        /// 获取一级学科下面所有二级学科列表以及课程列表  
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetAllDisciplineInfo()
+        {
+            return Success(mapper.GetAllDisciplineInfo(this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 获取一级学科下面所有二级学科列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetAllDisciplineInfoOnly()
+        {
+            return Success(mapper.GetAllDisciplineInfoOnly(this.System_Station_ID));
+        }
+        
+
+        /// <summary>
+        /// 获取所有推荐课程
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetAllRecommendCourse()
+        {
+            return Success(mapper.GetAllRecommendCourse(this.System_Station_ID));
+        }
+    }
+}

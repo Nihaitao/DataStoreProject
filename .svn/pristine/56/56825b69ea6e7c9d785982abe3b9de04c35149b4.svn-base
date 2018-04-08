@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="CollectionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetCollectionListByStuIDTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetCollectionListByStuID_Fragment"></include>
+    </select>
+    <select id="GetCollectionListByStuID" resultClass="DataStoreProject.Model.ViewModel.Question" parameterClass="map">
+      SELECT q.*
+      <include refid ="GetCollectionListByStuID_Fragment"></include>
+    </select>
+
+    <sql id="GetCollectionListByStuID_Fragment">
+      from w_question q LEFT JOIN w_collection  c on q.ID=c.BusID where q.System_Station_ID=#System_Station_ID# and  c.BusType=#BusType# and c.StuID=#StuID#
+      <isGreaterThan compareValue="0" prepend="and" property="QuestionStore_ID">
+        q.QuestionStore_ID=#QuestionStore_ID#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="QuestionType_ID">
+        q.QuestionType_ID=#QuestionType_ID#
+      </isGreaterThan>
+      ORDER BY c.AddTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetNoteListByStuIDTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetNoteListByStuID_Fragment"></include>
+    </select>
+    <select id="GetNoteListByStuID" resultClass="DataStoreProject.Model.ViewModel.Question" parameterClass="map">
+      SELECT  DISTINCT q.*
+      <include refid ="GetNoteListByStuID_Fragment"></include>
+    </select>
+
+    <sql id="GetNoteListByStuID_Fragment">
+      from w_question q LEFT JOIN w_questionnote n on q.ID=n.Question_ID  where q.System_Station_ID=#System_Station_ID# and n.StuID=#StuID#
+      <isGreaterThan compareValue="0" prepend="and" property="QuestionStore_ID">
+        q.QuestionStore_ID=#QuestionStore_ID#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="QuestionType_ID">
+        q.QuestionType_ID=#QuestionType_ID#
+      </isGreaterThan>
+      ORDER BY n.AddTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetQuestionListforNote" resultClass="DataStoreProject.Model.Entity.Question.W_QuestionNote" parameterClass="map">
+      SELECT   n.* from w_question q LEFT JOIN w_questionnote n on q.ID=n.Question_ID  where q.System_Station_ID=#System_Station_ID# and n.StuID=#StuID#
+    </select>
+
+    <delete id="DeleteAllNote" parameterClass="map">
+      DELETE from w_questionnote where StuID=#StuID# and Question_ID=#Question_ID#
+    </delete>
+  </statements>
+</sqlMap>

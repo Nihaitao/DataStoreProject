@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetInterlocutionListByCuIdCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetInterlocutionListByCuId_Fragment"></include>
+    </select>
+    <select id="GetInterlocutionListByCuId" resultClass="DataStoreProject.Model.ViewModel.InterlocutionModel" parameterClass="map">
+      select a.ID,a.Course_ID CourseId,b.Name CourseName,a.Chapter_ID ChapterId,c.Name ChapterName,a.Content,a.AddTime,
+      a.Student_ID StudentId,d.Name StudentName,a.Account_ID AccountID,e.Name AccountName
+      <include refid ="GetInterlocutionListByCuId_Fragment"></include>
+    </select>
+    <sql id="GetInterlocutionListByCuId_Fragment">
+      from W_Course_Interlocution a
+      left join w_course b on a.Course_ID = b.ID
+      left join w_course_chapters c on a.Chapter_ID = c.ID
+      left join s_studentinfo d on a.Student_ID = d.StuId
+      left join h_station_account e on e.Account_ID = a.Account_ID and e.System_Station_ID = #System_Station_ID# where PID = 0
+      <isGreaterThan compareValue="0" prepend="and" property="Course_ID">
+        a.Course_ID = #Course_ID#
+      </isGreaterThan>
+      <isEqual compareValue="0" prepend="and" property="Course_ID">
+        a.Course_ID in (select ID from w_course where Discipline_ID = #Discipline_ID#)
+      </isEqual>
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetNewInterlocution" resultClass="DataStoreProject.Model.ViewModel.NewInterlocution" parameterClass="map">
+      select a.PID,a.Content,a.AddTime,a.Student_ID StudentId,d.Name StudentName,a.Account_ID AccountID,e.Name AccountName
+      from W_Course_Interlocution a
+      left join s_studentinfo d on a.Student_ID = d.StuId
+      left join h_station_account e on e.Account_ID = a.Account_ID and e.System_Station_ID = #System_Station_ID#
+      where PID > 0
+      <isGreaterThan compareValue="0" prepend="and" property="Course_ID">
+        a.Course_ID = #Course_ID#
+      </isGreaterThan>
+      <isEqual compareValue="0" prepend="and" property="Course_ID">
+        a.Course_ID in (select ID from w_course where Discipline_ID = #Discipline_ID#)
+      </isEqual>
+    </select>
+
+    <delete id="DeleteCourseInterlocution" parameterClass="map">
+      Delete from W_Course_Interlocution where (ID in (#Ids#) or PID in (#Ids#)) 
+    </delete>
+
+
+    <select id="GetCourseCommentListCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetCourseCommentList_Fragment"></include>
+    </select>
+    <select id="GetCourseCommentList" resultClass="DataStoreProject.Model.ViewModel.InterlocutionModel" parameterClass="map">
+      select a.ID,a.Course_ID CourseId,b.Name CourseName,a.Chapter_ID ChapterId,c.Name ChapterName,a.Content,a.AddTime,a.Student_ID StudentId,d.Name StudentName,
+      (select count(Comment_ID) from w_comment_thumbsup where Comment_ID=a.ID) as ThumbUp
+      <include refid ="GetInterlocutionListByCuId_Fragment"></include>
+    </select>
+    <sql id="GetCourseCommentList_Fragment">
+      from W_Course_Comment a
+      left join w_course b on a.Course_ID = b.ID
+      left join w_course_chapters c on a.Chapter_ID = c.ID
+      left join s_studentinfo d on a.Student_ID = d.StuId
+      <isGreaterThan compareValue="0" prepend="and" property="Course_ID">
+        a.Course_ID = #Course_ID#
+      </isGreaterThan>
+      <isEqual compareValue="0" prepend="and" property="Course_ID">
+        a.Course_ID in (select ID from w_course where Discipline_ID = #Discipline_ID#)
+      </isEqual>
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <delete id="DeleteCourseComment" parameterClass="map">
+      delete from W_Course_Comment where ID in (#Ids#)
+    </delete>
+  </statements>
+</sqlMap>

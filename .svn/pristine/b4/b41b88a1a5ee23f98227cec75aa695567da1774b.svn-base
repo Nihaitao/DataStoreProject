@@ -1,0 +1,133 @@
+﻿using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using DataStoreProject.Model.Entity.ExamPaper;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.ViewModel;
+
+namespace DataStoreProject.Business
+{
+    public class ExamPaperMapper : BaseMapper
+    {
+
+        public bool AddExamPaper(W_ExamPaper model)
+        {
+            if (string.IsNullOrEmpty(model.Title))
+            {
+                throw new ApiException("试卷名称不能为空");
+            }
+            using (var session = OpenOrmSession())
+            {
+                return session.Insert(model, true) > 0;
+            }
+        }
+
+        public bool AddExamPaperDetail(W_ExamPaperDetail model)
+        {
+            using (var session = OpenOrmSession())
+            {
+                return session.Insert(model, true) > 0;
+            }
+        }
+
+        public bool UpdateExamPaper(W_ExamPaper model)
+        {
+            if (string.IsNullOrEmpty(model.Title))
+            {
+                throw new ApiException("试卷名称不能为空");
+            }
+            using (var session = OpenOrmSession())
+            {
+                return session.Update(model) > 0;
+            }
+        }
+
+        public bool UpdateExamPaperDetail(W_ExamPaperDetail model)
+        {
+            using (var session = OpenOrmSession())
+            {
+                return session.Update(model) > 0;
+            }
+        }
+
+        public bool DeleteExamPaper(int id)
+        {
+            return SqlMapper.Delete("DeleteExamPaper", new { id }) > 0;
+        }
+
+        public IList GetExamPaper(int id)
+        {
+            return QueryForList("GetExamPaper", new { id });
+        }
+        public IList GetExamPaperList(ExamPagerRequest request)
+        {
+            return QueryForList("GetExamPaperList", new { title = request.Title, type = request.Type, store = request.Store,DoType=request.DoType, Province_ID = request.Province_ID, pageIndex = (request.PageIndex - 1) * request.PageSize, pageSize = request.PageSize, pageStatus = request.PageStatus });
+        }
+        public int GetExamPaperTotalCount(ExamPagerRequest request)
+        {
+            return SqlMapper.QueryForObject<int>("GetExamPaperTotalCount", new { title = request.Title, type = request.Type,DoType=request.DoType, store = request.Store, Province_ID = request.Province_ID, pageStatus = 0 });
+        }
+
+        public IList CombinationExamPaper(string p, int examPaperId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IList DoExamPaper(string p, int examPaperId)
+        {
+            throw new NotImplementedException();
+        }
+        public IList GetExamPaperType(int examPaperId)
+        {
+            return QueryForList("GetExamPaperType", new { examPaperId = examPaperId });
+        }
+        public IList GetExamPaperTypebyID(int ID)
+        {
+            return QueryForList("GetExamPaperTypebyID", new { ID = ID });
+        }
+
+        public bool DeleteExamPaperDetail(int ID)
+        {
+            return SqlMapper.Delete("DeleteExamPaperDetail", new { ID }) > 0;
+        }
+
+        public bool AddPaperDetailQuestions(ExamPaperPostModel model)
+        {
+            W_ExamPaper paper = Orm.Single<W_ExamPaper>(x => x.ID == model.examPaperId);
+            if (paper == null)
+                throw new ApiException("试卷不存在或者已删除");
+            W_ExamPaperDetail paperDetail = Orm.Single<W_ExamPaperDetail>(x => x.ID == model.examPaperDetailId);
+            if (paperDetail == null)
+                throw new ApiException("试卷题型不存在或者已删除");
+            if (paperDetail.ExamPaper_ID != paper.ID)
+                throw new ApiException("试卷题型与试卷不匹配");
+            if (model.questionIds.Length > paperDetail.Num)
+                throw new ApiException("选择的题目不能超过配置的数目");
+            SqlMapper.BeginTransaction();
+            try
+            {
+                foreach (int questionId in model.questionIds)
+                {
+                    Orm.Insert<W_ExamPaperDetail_Detail>(new W_ExamPaperDetail_Detail()
+                    {
+                        ExamPaper_ID = model.examPaperId,
+                        ExamPaper_Detail_ID = model.examPaperDetailId,
+                        Question_ID = questionId
+                    });
+                }
+                SqlMapper.CommitTransaction();
+            }
+            catch
+            {
+                SqlMapper.RollBackTransaction();
+                return false;
+            }
+            return true;
+        }
+    }
+}

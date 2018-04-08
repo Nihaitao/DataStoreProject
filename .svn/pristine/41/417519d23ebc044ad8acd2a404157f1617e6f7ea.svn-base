@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="ChapterMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="selectChapter" resultClass="map" parameterClass="map">
+      select * from w_chapter where `QuestionStore_ID`=#QuestionStore_ID#
+    </select>
+
+    <update id="UpdataChapter" parameterClass="map">
+      updata w_Chapter set Valid=#Valid# where ID=#ID#
+    </update>
+
+    <select id="GetChapterQuestion" resultClass="map" parameterClass="map">
+      select a.*,(SELECT Count(1) from w_chapter_question where Chapter_ID = a.ID) as QuestionCounts from w_chapter a where QuestionStore_ID = #storeId#
+    </select>
+
+    <select id ="GetChapterPracticeQuestion" resultClass="DataStoreProject.Model.ViewModel.Question" parameterClass="map">
+      select a.* from w_question a join w_chapter_question b on a.ID = b.Question_ID
+      where b.Chapter_ID = #chapterId#
+      <isNotEqual compareValue="-1" property="questionType" prepend="and">
+        a.QuestionType_ID = #questionType#
+      </isNotEqual>
+      <!--已做-->
+      <isEqual compareValue="1" property="questionSource" prepend="and">
+        ID in (select Question_ID from w_doexamresult_detail where StuId = #stuId#)
+      </isEqual>
+      <!--未做-->
+      <isEqual compareValue="2" property="questionSource" prepend="and">
+        ID not in (select Question_ID from w_doexamresult_detail where StuId = #stuId#)
+      </isEqual>
+      <!--做错-->
+      <isEqual compareValue="3" property="questionSource" prepend="and">
+        ID in (select Question_ID from w_doexamresult_detail where StuId = #stuId# and Judge = 0)
+      </isEqual>
+      limit 0,#questionCount#
+    </select>
+
+    <select id="GetStudentChapterPractice" resultClass="map" parameterClass="map">
+      select sum(1) as TotalCount,
+      sum(case when Chapter_ID in (select Question_ID from w_doexamresult_detail where StuId = #stuId#) then 1 else 0 end) as AlreadyCount,
+      sum(case when Chapter_ID in (select Question_ID from w_doexamresult_detail where StuId = #stuId#) then 0 else 1 end) as YetCount,
+      sum(case when Chapter_ID in (select Question_ID from w_doexamresult_detail where StuId = #stuId# and Judge = 0) then 1 else 0 end) as WrongCount
+      from w_chapter_question where Chapter_ID = #chapterId#
+    </select>
+  </statements>
+</sqlMap>

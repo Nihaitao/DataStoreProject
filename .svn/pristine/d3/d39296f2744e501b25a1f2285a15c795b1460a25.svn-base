@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="ExamPaperMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <delete id="DeleteExamPaper" parameterClass="map">
+      delete from w_exampaper where ID = #id#;
+      delete from w_exampaperdetail where ExamPaper_ID = #id#;
+      delete from w_exampaperdetail_detail where ExamPaper_ID = #id#;
+    </delete>
+
+    <select id="GetExamPaperTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetExamPaper_Fragment"></include>
+    </select>
+
+    <select id="GetExamPaperList" resultClass="map" parameterClass="map">
+      select a.*,b.Name as AddPersonName,c.Name as QuestionStoreName,
+      (select ProvinceName from h_province p where a.Province_ID=p.ProvinceID) ProvinceName
+      <include refid ="GetExamPaper_Fragment"></include>
+    </select>
+
+    <sql id="GetExamPaper_Fragment">
+      from w_exampaper a
+      left join h_station_account b on a.AddPerson = b.Account_ID
+      left join w_questionstore c on a.QuestionStore_ID = c.ID
+      <dynamic prepend="where">
+        <isNotEmpty prepend="and" property="title">
+          a.Title like concat('%',#title#,'%')
+        </isNotEmpty>
+        <isGreaterThan compareValue="-1" prepend="and" property="type">
+          a.ExamPaperType=#type#
+        </isGreaterThan>
+        <isGreaterThan compareValue="0" prepend="and" property="store">
+          a.QuestionStore_ID=#store#
+        </isGreaterThan>
+        <isGreaterThan compareValue="-1" prepend="and" property="DoType">
+          a.ExamPaperDo=#DoType#
+        </isGreaterThan>
+        <isGreaterThan compareValue="0" prepend="and" property="Province_ID">
+          a.Province_ID=#Province_ID#
+        </isGreaterThan>
+      </dynamic>
+    </sql>
+
+    <select id="GetExamPaper" resultClass="map" parameterClass="map">
+      select a.*,b.Name as AddPersonName,c.Name as QuestionStoreName from w_exampaper a
+      left join h_station_account b on a.AddPerson = b.Account_ID
+      left join w_questionstore c on a.QuestionStore_ID = c.ID
+      where a.ID = #id#
+    </select>
+
+    <select id="GetExamPaperQuestionTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetExamPaperQuestion_Fragment"></include>
+    </select>
+    <select id="GetExamPaperQuestionList" resultClass="map" parameterClass="map">
+      select b.*,c.Name as QuestionTypeName,d,Name as QuestionStoreName
+      <include refid ="GetExamPaper_Fragment"></include>
+    </select>
+    <sql id="GetExamPaperQuestion_Fragment">
+      from w_exampaperdetail_detail a
+      left join w_question b on a.Question_ID = b,ID
+      left join w_questiontype c on b.QuestionType_ID = c.ID
+      left join w_questionstore d on b.QuestionStore_ID = d.ID
+      where a.ExamPaper_ID = #examPaperId# and a.ExamPaper_Detail_ID = #examPaperDetailId#
+      <isNotEmpty prepend="and" property="title">
+        b.Title like concat('%',#title#,'%')
+      </isNotEmpty>
+      <isGreaterThan compareValue="0" prepend="and" property="level">
+        b.Level=#level#
+      </isGreaterThan>
+      order by a.ID desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+
+    <select id="GetNonExamPaperQuestionTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetNonExamPaperQuestion_Fragment"></include>
+    </select>
+    <select id="GetNonExamPaperQuestionList" resultClass="map" parameterClass="map">
+      select a.*,b.Name as QuestionTypeName,c,Name as QuestionStoreName
+      <include refid ="GetNonExamPaper_Fragment"></include>
+    </select>
+    <sql id="GetNonExamPaperQuestion_Fragment">
+      from w_question a
+      left join w_questiontype b on a.QuestionType_ID = b.ID
+      left join w_questionstore c on a.QuestionStore_ID = c.ID
+      where a.QuestionType_ID = #type# and a.QuestionData_ID = 0 and a.QuestionStore_ID = #storeId#
+      and a.ID not in (select Question_ID from w_exampaperdetail_detail where ExamPaper_ID = #examPaperId# and ExamPaper_Detail_ID = #examPaperDetailId#)
+      <isNotEmpty prepend="and" property="title">
+        a.Title like concat('%',#title#,'%')
+      </isNotEmpty>
+      <isGreaterThan compareValue="0" prepend="and" property="level">
+        a.Level=#level#
+      </isGreaterThan>
+      order by a.ID desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+  </statements>
+</sqlMap>

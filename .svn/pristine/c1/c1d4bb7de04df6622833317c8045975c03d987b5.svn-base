@@ -1,0 +1,142 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataStoreProject.Model.ViewModel
+{
+    public class QuestionStoreRequest : PageModel
+    {
+        public QuestionStoreRequest() { Valid = -1; }
+        /// <summary>
+        /// 名称
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// 科次ID
+        /// </summary>
+        public int DisciplineId { get; set; }
+
+        /// <summary>
+        /// 启用/禁用
+        /// </summary>
+        public int Valid { get; set; }
+
+    }
+
+    public class ExamPagerRequest : PageModel
+    {
+        /// <summary>
+        /// 名称
+        /// </summary>
+        public string Title { get; set; }
+
+        /// <summary>
+        /// 题型
+        /// </summary>
+        public int Type { get; set; }
+
+        /// <summary>
+        /// 题库
+        /// </summary>
+        public int Store { get; set; }
+
+        /// <summary>
+        /// 组卷类型
+        /// </summary>
+        public int DoType { get; set; }
+        /// <summary>
+        /// 审核状态
+        /// </summary>
+        public int Valid { get; set; }
+        /// <summary>
+        /// 省份
+        /// </summary>
+        public int Province_ID { get; set; }
+
+
+    }
+
+    public class QuestionRequest : PageModel
+    {
+        /// <summary>
+        /// 名称
+        /// </summary>
+        public string Title { get; set; }
+
+        /// <summary>
+        /// 题型
+        /// </summary>
+        public int Type { get; set; }
+
+        /// <summary>
+        /// 题库
+        /// </summary>
+        public int Store { get; set; }
+
+        /// <summary>
+        /// 难度
+        /// </summary>
+        public int Level { get; set; }
+        
+        /// <summary>
+        /// 试卷ID 
+        /// </summary>
+        public int ExamPaperID { get; set; }
+
+        /// <summary>
+        /// 试卷题型ID
+        /// </summary>
+        public int ExamPaperDetailID { get; set; }
+
+    }
+
+    public class ChapterQuestions : PageModel
+    {
+
+        /// <summary>
+        /// 章节ID
+        /// </summary>
+        public int ID { get; set; }
+        /// <summary>
+        /// 名称
+        /// </summary>
+        public string Title { get; set; }
+        /// <summary>
+        /// 题型
+        /// </summary>
+        public int Type { get; set; }
+        /// <summary>
+        /// 难度
+        /// </summary>
+        public int Level { get; set; }
+
+        /// <summary>
+        /// 题库ID
+        /// </summary>
+        public int QuestionStore_ID { get; set; }
+
+    }
+    
+    public class QuestionData
+    {
+        /// <summary>
+        /// 主键ID
+        /// </summary>
+        public int ID { get; set; }
+
+        /// <summary>
+        /// 题目内容
+        /// </summary>
+        public string Content { get; set; }
+
+        /// <summary>
+        /// 题库ID
+        /// </summary>
+        public int QuestionStore_ID { get; set; }
+
+    }
+   
+}

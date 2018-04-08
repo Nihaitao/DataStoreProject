@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetPolyvSetByWhere" resultClass="DataStoreProject.Model.ViewModel.PolyvInfoModel" parameterClass="map">
+      select a.*,b.ID,b.`Name`,b.userid,b.writetoken,b.readtoken,b.secretkey,IFNULL(c.PolyvinfoType,0) PolyvSource from w_polyvinfo_detail a
+      left join  w_polyvinfo b on a.PolyvInfo_ID = b.ID
+      left join w_configuration c on a.System_Station_ID = c.System_Station_ID
+      where a.System_Station_ID = #System_Station_ID#
+    </select>
+
+    <select id="GetPolyvInfoByWhere" resultClass="Entites.PolyvInfo.W_PolyvInfo" parameterClass="map">
+      SELECT  * from w_polyvinfo  where System_Station_ID=#System_Station_ID#
+    </select>
+
+    <update id="UpdatePolyvinfoType" parameterClass="map">
+      Update W_Configuration Set PolyvinfoType = #PolyvinfoType# where System_Station_ID = #System_Station_ID#
+    </update>
+
+    <update id="UpdatePolyvInfo" parameterClass="map">
+      update w_polyvinfo set Name = #Name#,userid = #userid#,writetoken = #writetoken#,readtoken = #readtoken#,secretkey = #secretkey#
+      where System_Station_ID = #System_Station_ID# and ID = #ID#
+    </update>
+
+    <update id="UpdatePolyvInfoDetail" parameterClass="map">
+      Update W_PolyvInfo_Detail set PolyvInfo_ID=#PolyvInfo_ID#,cataid = #cataid#,Valid = #Valid# where System_Station_ID = #System_Station_ID#
+    </update>
+
+  </statements>
+</sqlMap>

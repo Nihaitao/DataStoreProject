@@ -1,0 +1,98 @@
+﻿using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.Chapters;
+using DataStoreProject.Model.ViewModel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Http;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class ResourceController : StationBaseApiController
+    {
+        ResourceMapper mapper = new ResourceMapper();
+
+        /// <summary>
+        /// 根据对应条件查询课件数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetCourseWareList([FromUri]CourseWareModel model)
+        {
+            return Success(mapper.GetCourseWareList(model, this.System_Station_ID), model.PageIndex == 1 ? mapper.GetCourseWareListTotalCount(model, this.System_Station_ID) : 0);
+        }
+
+        /// <summary>
+        /// 启用禁用课件
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic UpdateValid(CourseWareModel model)
+        {
+            return Success(mapper.UpdateValid(model, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 更新播放次数
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetUpdatePlayCount(int ID)
+        {
+            return Success(mapper.GetUpdatePlayCount(ID,this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 删除课件
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteCourseWare(CourseWareModel model)
+        {
+            return Success(mapper.DeleteCourseWare(model, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 更新视频状态
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic UpdateStatus(W_CourseWare model)
+        {
+            return Success(mapper.UpdateStatus(model, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 添加修改课件
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SaveCourseWare(W_CourseWare Model)
+        {
+            return Success(mapper.SaveCourseWare(Model, this.System_Station_ID, this.AccountID));
+        }
+
+        /// <summary>
+        /// 根据课件id查找对应数据（学生端）传课程和章节ID
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetCourseWareByIDforStu([FromUri]W_CourseWareModel model)
+        {
+            return Success(mapper.GetCourseWareByIDforStu(model, this.SafeGetStuId, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 根据课件id查找对应数据（pc端）传主键ID
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetCourseWareByIDforPC([FromUri]W_CourseWareModel model)
+        {
+            return Success(mapper.GetCourseWareByIDforPC(model, this.System_Station_ID));
+        }
+    }
+}

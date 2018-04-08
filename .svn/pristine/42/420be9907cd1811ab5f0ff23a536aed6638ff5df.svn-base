@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetConfigurationByStationID" resultClass="map" parameterClass="map">
+      select * from h_configuration where System_Station_ID=#System_Station_ID#
+    </select>
+  </statements>
+</sqlMap>

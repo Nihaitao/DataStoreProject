@@ -1,0 +1,52 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.Entity.DataInfo;
+
+namespace DataStoreProject.Business
+{
+    public class CollectionMapper : BaseMapper
+    {
+
+        public IList GetCollectionList(int BusType, string StuID)
+        {
+            
+            return QueryForList("selectCollection", new { BusType = BusType, StuID = StuID });
+        }
+
+        public bool AddCollection(W_Collection model)
+        {
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+                if(session.Exists<W_Collection>(x=>x.ID==model.ID)){
+                    if (session.Delete<W_Collection>(x => x.ID == model.ID) > 0)
+                    {
+                        return true;
+                    }
+                    else 
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    var id = session.Insert(model);
+                    if (id > 0)
+                    {
+                        return true;
+                    }
+                    else 
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+}

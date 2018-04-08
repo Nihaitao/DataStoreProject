@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="ChapterMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="selectChapter" resultClass="DataStoreProject.Model.ViewModel.ChapterModel" parameterClass="map">
+      select *,(SELECT COUNT(*) from W_Chapter_Question where Chapter_ID=w.ID)as QuestionCounts from w_chapter w where `QuestionStore_ID`=#QuestionStore_ID#
+    </select>
+
+    <update id="Enabledisable"  parameterClass="map">
+      update w_chapter set Valid = #valid# where ID = #id#;
+      <isEqual compareValue="0" property="valid">
+        update w_chapter set Valid = #valid# where CID = #id#;
+      </isEqual>
+    </update>
+    
+    <update id="UpdataChapter" parameterClass="map">
+      updata w_Chapter set Valid=#Valid# where ID=#ID#
+    </update>
+
+    <select id="GetChapterQuestion" resultClass="DataStoreProject.Model.ViewModel.ChapterModel"  parameterClass="map">
+      select a.*,(SELECT Count(1) from w_chapter_question where Chapter_ID = a.ID) as QuestionCounts,
+      (select count(DISTINCT Question_ID) from w_chapterpractice_detail where ID in(select ID from w_chapterpractice where  QuestionStore_ID = #storeId# and StuID = #stuId#)) as AlreadyCounts
+      from w_chapter a where QuestionStore_ID = #storeId#
+    </select>
+
+    <select id ="GetChapterPracticeQuestion" resultClass="DataStoreProject.Model.ViewModel.Question" parameterClass="map">
+      select a.* from w_question a join w_chapter_question b on a.ID = b.Question_ID
+      where b.Chapter_ID = #chapterId#
+      <isNotNull property="questionType" prepend="and">
+        a.QuestionType_ID in ($questionType$)
+      </isNotNull>
+      <!--已做-->
+      <isEqual compareValue="1" property="questionSource" prepend="and">
+        ID in (select Question_ID from w_doexamresult_detail where StuId = #stuId#)
+      </isEqual>
+      <!--未做-->
+      <isEqual compareValue="2" property="questionSource" prepend="and">
+        ID not in (select Question_ID from w_doexamresult_detail where StuId = #stuId#)
+      </isEqual>
+      <!--做错-->
+      <isEqual compareValue="3" property="questionSource" prepend="and">
+        ID in (select Question_ID from w_doexamresult_detail where StuId = #stuId# and Judge = 0)
+      </isEqual>
+      limit 0,#questionCount#
+    </select>
+
+    <select id="GetStudentChapterPractice" resultClass="map" parameterClass="map">
+      select sum(1) as TotalCount,
+      sum(case when Chapter_ID in (select Question_ID from w_doexamresult_detail where StuId = #stuId#) then 1 else 0 end) as AlreadyCount,
+      sum(case when Chapter_ID in (select Question_ID from w_doexamresult_detail where StuId = #stuId#) then 0 else 1 end) as YetCount,
+      sum(case when Chapter_ID in (select Question_ID from w_doexamresult_detail where StuId = #stuId# and Judge = 0) then 1 else 0 end) as WrongCount
+      from w_chapter_question where Chapter_ID = #chapterId#
+    </select>
+
+    <select id="GetChapterQuestionTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetChapterQuestion_Fragment"></include>
+    </select>
+    <select id="GetChapterQuestionList" resultClass="map" parameterClass="map">
+      SELECT a.*,c.`Name` as QuestionTypeName,d.`Name` as QuestionStoreName
+      <include refid ="GetChapterQuestion_Fragment"></include>
+    </select>
+    <sql id="GetChapterQuestion_Fragment">
+      FROM
+      w_question a
+      JOIN w_chapter_question b ON a.ID = b.Question_ID
+      LEFT JOIN w_questiontype c ON a.QuestionType_ID = c.ID
+      LEFT JOIN w_questionstore d ON a.QuestionStore_ID = d.ID
+      WHERE b.Chapter_ID = #ID#
+      <isNotEmpty prepend="and" property="title">
+        a.Title like concat('%',#title#,'%')
+      </isNotEmpty>
+      <isGreaterThan compareValue="0" prepend="and" property="level">
+        a.Level=#level#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="type">
+        a.QuestionType_ID=#type#
+      </isGreaterThan>
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+
+    <select id="GetNonChapterQuestionTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetNonChapterQuestion_Fragment"></include>
+    </select>
+    <select id="GetNonChapterQuestionList" resultClass="map" parameterClass="map">
+      SELECT
+      a.*,c.`Name` as QuestionTypeName,d.`Name` as QuestionStoreName 
+      <include refid ="GetNonChapterQuestion_Fragment"></include>
+    </select>
+    <sql id="GetNonChapterQuestion_Fragment">
+      FROM
+      w_question a
+      LEFT JOIN w_questiontype c ON a.QuestionType_ID = c.ID
+      LEFT JOIN w_questionstore d ON a.QuestionStore_ID = d.ID
+      WHERE
+      a.QuestionStore_ID = #QuestionStore_ID#
+      AND a.ID NOT IN (
+      SELECT
+      Question_ID
+      FROM
+      w_chapter_question
+      WHERE
+      Chapter_ID = #ID#
+      )
+      <isNotEmpty prepend="and" property="title">
+        a.Title like concat('%',#title#,'%')
+      </isNotEmpty>
+      <isGreaterThan compareValue="0" prepend="and" property="level">
+        a.Level=#level#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="type">
+        a.QuestionType_ID=#type#
+      </isGreaterThan>
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+  </statements>
+</sqlMap>

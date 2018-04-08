@@ -1,0 +1,449 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.Entity.Chapters;
+using DataStoreProject.Model.Entity.Question;
+using DataStoreProject.Model.Entity.ExamPaper;
+using DataStoreProject.Model.Entity;
+using DataStoreProject.Model.ViewModel;
+
+namespace DataStoreProject.Business
+{
+    public class ChapterMapper : BaseMapper
+    {
+
+        public List<ChapterModel> GetChapterList(int QuestionStore_ID)
+        {
+            List<ChapterModel> list = SqlMapper.QueryForList<ChapterModel>("selectChapter", new { QuestionStore_ID = QuestionStore_ID }).ToList();
+            List<ChapterModel> newList = list.Where(x => x.CID == 0).OrderByDescending(x => x.Valid).ThenBy(x => x.Sort).ToList();
+            foreach (ChapterModel model in newList)
+            {
+                model.Children = list.Where(x => x.CID == model.ID).OrderByDescending(x => x.Valid).ThenBy(x => x.Sort).ToList();
+            }
+            return newList;
+        }
+
+        public bool AddChapter(W_Chapter model)
+        {
+            if (string.IsNullOrEmpty(model.Name))
+            {
+                throw new ApiException("章节名称不能为空");
+            }
+            return Orm.Insert(model) > 0;
+        }
+
+        public bool UpdateChapter(W_Chapter model)
+        {
+            if (model == null)
+            {
+                throw new ApiException("对象不能为空");
+                //当出现异常后，可以直接抛ApiException，拦截器将会拦截异常，并格式化输出
+            }
+            W_Chapter oldModel = Orm.Single<W_Chapter>(x => x.ID == model.ID);
+            model.AddPerson = oldModel.AddPerson;
+            model.AddTime = oldModel.AddTime;
+            return Orm.Update(model) > 0;
+        }
+        public dynamic DeleteChapter(W_Chapter model)
+        {
+            W_Chapter oldModel = Orm.Single<W_Chapter>(x => x.ID == model.ID);
+            if (oldModel == null)
+                throw new ApiException("章节已删除或者不存在");
+            if (oldModel.Valid == 1)
+                throw new ApiException("已启用的章节无法删除");
+            List<W_Chapter> newmodel = Orm.Select<W_Chapter>(x => x.CID == model.ID);
+            if (newmodel.Count > 0)
+                throw new ApiException("请检查章下面是否存在节");
+            if (Orm.Select<W_Chapter_Question>(x => x.Chapter_ID == model.ID).Count > 0)
+                throw new ApiException("该章节包含章节练习，不能删除");
+            return Orm.Delete<W_Chapter>(x => x.ID == model.ID);
+        }
+
+        public dynamic Enabledisable(W_Chapter model)
+        {
+            //如果将要启用的章节是子章节，需要先启用父章节
+            if (model.Valid == 1)
+            {
+                W_Chapter chapter = Orm.Single<W_Chapter>(x => x.ID == model.ID);
+                if (chapter == null)
+                    throw new ApiException("章节已删除或者不存在");
+                if (chapter.CID > 0)
+                {
+                    W_Chapter parent = Orm.Single<W_Chapter>(x => x.ID == chapter.CID);
+                    if (parent.Valid == 0)
+                    {
+                        throw new ApiException("请先启用父章节");
+                    }
+                }
+            }
+            return SqlMapper.Update("Enabledisable", new { id = model.ID, valid = model.Valid }) > 0;
+        }
+
+        /// <summary>
+        /// 章节选择题目
+        /// </summary>
+        /// <param name="chapterId"></param>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public bool CheckChapterQuestion(int chapterId, List<Question> list)
+        {
+            SqlMapper.BeginTransaction();
+            try
+            {
+                foreach (Question question in list)
+                {
+                    Orm.Insert<W_Chapter_Question>(new W_Chapter_Question()
+                    {
+                        Chapter_ID = chapterId,
+                        Question_ID = question.ID
+                    });
+                }
+                SqlMapper.CommitTransaction();
+            }
+            catch
+            {
+                SqlMapper.RollBackTransaction();
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 查询章节已有的题目列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public IList GetChapterQuestionList(ChapterQuestions request)
+        {
+            return QueryForList("GetChapterQuestionList", new { ID = request.ID, type = request.Type, title = request.Title, level = request.Level, pageIndex = (request.PageIndex - 1) * request.PageSize, pageSize = request.PageSize, pageStatus = request.PageStatus });
+        }
+        /// <summary>
+        /// 查询章节已有的题目列表总条数
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public int GetChapterQuestionTotalCount(ChapterQuestions request)
+        {
+            return SqlMapper.QueryForObject<int>("GetChapterQuestionTotalCount", new { ID = request.ID, type = request.Type, title = request.Title, level = request.Level, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 查询未选的题目列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="stationId"></param>
+        /// <returns></returns>
+        public IList GetNonChapterQuestionList(ChapterQuestions request, int stationId)
+        {
+            return QueryForList("GetNonChapterQuestionList", new { ID = request.ID, QuestionStore_ID = request.QuestionStore_ID, type = request.Type, title = request.Title, level = request.Level, pageIndex = (request.PageIndex - 1) * request.PageSize, pageSize = request.PageSize, pageStatus = request.PageStatus });
+        }
+
+        /// <summary>
+        /// 查询未选的题目列表总条数
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="stationId"></param>
+        /// <returns></returns>
+        public int GetNonChapterQuestionTotalCount(ChapterQuestions request, int stationId)
+        {
+            return SqlMapper.QueryForObject<int>("GetNonChapterQuestionTotalCount", new { ID = request.ID, QuestionStore_ID = request.QuestionStore_ID, type = request.Type, title = request.Title, level = request.Level, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 给章节添加题目 
+        /// </summary>
+        /// <returns></returns>
+        public bool AddChapterQuestions(ChapterPostModel model)
+        {
+            W_Chapter paper = Orm.Single<W_Chapter>(x => x.ID == model.ChapterID);
+            if (paper == null)
+                throw new ApiException("章节不存在或者已删除");
+
+            SqlMapper.BeginTransaction();
+            try
+            {
+                foreach (int questionId in model.questionIds)
+                {
+                    Orm.Insert<W_Chapter_Question>(new W_Chapter_Question()
+                    {
+                        Chapter_ID = model.ChapterID,
+                        Question_ID = questionId
+                    });
+                }
+                SqlMapper.CommitTransaction();
+            }
+            catch
+            {
+                SqlMapper.RollBackTransaction();
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 删除章节题目
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public bool DeleteChapterQuestion(ChapterPostModel request)
+        {
+            SqlMapper.BeginTransaction();
+            try
+            {
+                foreach (var item in request.questionIds)
+                {
+                    Orm.Delete<W_Chapter_Question>(x => x.Question_ID == item);
+                }
+                SqlMapper.CommitTransaction();
+            }
+            catch
+            {
+                SqlMapper.RollBackTransaction();
+                return false;
+            }
+            return true;
+
+        }
+
+
+        /// <summary>
+        /// 获取章节信息以及章节题目数量
+        /// </summary>
+        /// <param name="storeId"></param>
+        /// <returns></returns>
+        public IList GetChapterQuestion(int storeId, string stuId)
+        {
+            List<ChapterModel> list = SqlMapper.QueryForList<ChapterModel>("GetChapterQuestion", new { storeId, stuId }).ToList();
+            List<ChapterModel> newList = list.Where(x => x.CID == 0).OrderByDescending(x => x.Valid).ThenBy(x => x.Sort).ToList();
+            foreach (ChapterModel model in newList)
+            {
+                model.Children = list.Where(x => x.CID == model.ID).OrderByDescending(x => x.Valid).ThenBy(x => x.Sort).ToList();
+            }
+            return newList;
+        }
+
+        /// <summary>
+        /// 根据章节ID获取学生章节做题情况
+        /// </summary>
+        /// <param name="chapterId"></param>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        public IList GetStudentChapterPractice(int chapterId, string stuId)
+        {
+            return QueryForList("GetStudentChapterPractice", new { chapterId, stuId });
+        }
+
+        /// <summary>
+        /// 创建章节练习
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public PracticeModel CreateChapterPractice(W_ChapterPractice model, int chapterId, string questionType, int questionCount, int questionSource)
+        {
+            List<Question> list = SqlMapper.QueryForList<Question>("GetChapterPracticeQuestion", new { chapterId, questionType, questionCount, questionSource, stuId = model.StuId }).ToList();
+            if (list.Count == 0)
+                throw new ApiException("没有更多的试题");
+
+            //第一步，创建章节练习表W_ChapterPractice
+            W_Chapter chapter = Orm.Select<W_Chapter>(x => x.ID == chapterId).FirstOrDefault();
+            model.Title = chapter != null ? chapter.Name + "章节练习" + model.AddTime.ToString("yyyyMMddHHmmssfff") : "未知章节练习";
+            int practiceId = (int)Orm.Insert<W_ChapterPractice>(model, true);
+
+            List<W_QuestionNote> NoteList = Orm.Select<W_QuestionNote>(x => x.StuID == model.StuId).ToList();//题目笔记列表
+            //第二步，创建明细表w_chapterpractice_detail
+            foreach (Question q in list)
+            {
+                Orm.Insert<W_ChapterPractice_Detail>(new W_ChapterPractice_Detail()
+                {
+                    ChapterPractice_ID = practiceId,
+                    Question_ID = q.ID
+                });
+                q.NoteList = NoteList != null ? NoteList.Where(x => x.Question_ID == q.ID).ToList() : null;
+            }
+            // 第三步，创建学生做题记录主表，保存开始做题时间
+            W_DoExamResult result = new W_DoExamResult();
+            result.StuId = model.StuId;
+            result.BusType = 1;//章节练习
+            result.BusID = practiceId;
+            result.BeginTime = model.AddTime;
+            result.EndTime = model.AddTime;
+            int resultId = (int)Orm.Insert<W_DoExamResult>(result, true);
+
+            PracticeModel rtn = new PracticeModel();
+            rtn.practiceId = practiceId;
+            rtn.resultId = resultId;
+            rtn.list = list.OrderBy(x=>x.QuestionType_ID).ThenBy(x=>x.ID).ToList();
+            return rtn;
+        }
+
+        /// <summary>
+        /// 交卷
+        /// </summary>
+        /// <param name="model"></param>
+        /// <param name="stuId"></param>
+        /// <returns></returns>
+        public bool SubmitPractice(PracticeModel model, string stuId)
+        {
+            W_DoExamResult result = Orm.Select<W_DoExamResult>(x => x.ID == model.resultId).FirstOrDefault();
+            if (result == null)
+                throw new ApiException("对象错误");
+            else if (string.IsNullOrEmpty(stuId) || result.StuId != stuId)
+                throw new ApiException("登陆超时，请重新登陆");
+            result.EndTime = DateTime.Now;
+            result.Valid = 1;//交卷            
+
+            SqlMapper.BeginTransaction();
+            try
+            {
+                //获取试卷题型对应的分数
+                List<W_ExamPaperDetail> detailList = null;
+                if (result.BusType == 0)//试卷模式
+                {
+                    //更新试卷测试次数
+                    W_ExamPaper paper = Orm.Single<W_ExamPaper>(x => x.ID == result.BusID);
+                    paper.DoCount += 1;
+                    Orm.Update<W_ExamPaper>(paper);
+                    //试卷题型对应得分
+                    detailList = Orm.Select<W_ExamPaperDetail>(x => x.ExamPaper_ID == result.BusID).ToList();
+                }
+                //保存做题记录明细
+                foreach (Question question in model.list)
+                {
+                    decimal sorce = 0;
+                    if (result.BusType == 0)//试卷模式
+                    {
+                        W_ExamPaperDetail temp = detailList.FirstOrDefault(x => x.QuestionType_ID == question.QuestionType_ID);
+                        sorce = temp != null ? temp.Sorce : 0;
+                    }
+
+                    Orm.Insert<W_DoExamResult_Detail>(new W_DoExamResult_Detail()
+                    {
+                        DoExamResult_ID = result.ID,
+                        Question_ID = question.ID,
+                        StuID = result.StuId,
+                        MyAnswer = question.MyAnswer,
+                        Judge = question.Judge,
+                        Sorce = sorce,
+                        UpdateTime = result.EndTime
+                    });
+
+                    //更新题目信息
+                    SqlMapper.Update("UpdateQuestion", new { ID = question.ID, Judge = question.Judge, EasyWrongAnswer = question.MyAnswer });
+                }
+
+                //修改做题记录主表
+                Orm.Update<W_DoExamResult>(result);
+
+                SqlMapper.CommitTransaction();
+            }
+            catch
+            {
+                SqlMapper.RollBackTransaction();
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 显示做题结果
+        /// </summary>
+        /// <param name="busId"></param>
+        /// <param name="resultId"></param>
+        /// <param name="stuId"></param>
+        /// <returns></returns>
+        public dynamic GetPracticeResult(int busId, int resultId, string stuId)
+        {
+            ExamResults Results = new ExamResults();
+            Results.List = new List<Question>();
+            Results.List = SqlMapper.QueryForList<Question>("GetPracticeResult", new { busId, resultId, stuId }).OrderBy(x=>x.QuestionType_ID).ThenBy(x=>x.ID).ToList();
+            W_DoExamResult theResult = Orm.Single<W_DoExamResult>(x => x.ID == resultId);
+            Results.TotalTime = theResult != null ? (theResult.EndTime - theResult.BeginTime).TotalSeconds : 0.00; 
+            if (Results.List.Count > 0)
+            {
+                List<ResultSummary> list = new List<ResultSummary>();
+                List<W_QuestionNote> NoteList = Orm.Select<W_QuestionNote>(x => x.StuID == stuId).ToList();//题目笔记列表
+                foreach (Question q in Results.List)
+                {
+                    ResultSummary temp = list.FirstOrDefault(x => x.TypeID == q.QuestionType_ID);
+                    if (temp == null)
+                    {
+                        temp = new ResultSummary();
+                        temp.TypeID = q.QuestionType_ID;
+                        temp.TypeName = q.QuestionType_Name;
+                        temp.TotalCounts = 1;
+                        if (!string.IsNullOrEmpty(q.MyAnswer))
+                        {
+                            temp.AlreadyCounts = 1;
+                            if (q.Judge == 1)
+                                temp.CorrectCounts = 1;
+                            else
+                                temp.ErrorCounts = 1;
+                        }
+                        temp.YetCounts = temp.TotalCounts - temp.AlreadyCounts;
+                        temp.CorrectRate = ((float)temp.CorrectCounts / temp.TotalCounts * 100).ToString("f2");
+                        list.Add(temp);
+                    }
+                    else
+                    {
+                        temp.TypeID = q.QuestionType_ID;
+                        temp.TypeName = q.QuestionType_Name;
+                        temp.TotalCounts += 1;
+                        if (!string.IsNullOrEmpty(q.MyAnswer))
+                        {
+                            temp.AlreadyCounts += 1;
+                            if (q.Judge == 1)
+                                temp.CorrectCounts += 1;
+                            else
+                                temp.ErrorCounts += 1;
+                        }
+                        temp.YetCounts = temp.TotalCounts - temp.AlreadyCounts;
+                        temp.CorrectRate = ((float)temp.CorrectCounts / temp.TotalCounts * 100).ToString("f2");
+                    }
+                    q.NoteList = NoteList != null ? NoteList.Where(x => x.Question_ID == q.ID).ToList() : null;
+                }
+                Results.Result = list;
+            }
+            return Results;
+        }
+
+        public string GetPraticeInfo(int chapterId, int storeId)
+        {
+            W_Chapter chapter = Orm.Single<W_Chapter>(x => x.ID == chapterId);
+            if (chapter == null)
+                return "未知章节练习";
+            W_Chapter parent = Orm.Single<W_Chapter>(x => x.ID == chapter.CID);
+            if (parent == null)
+                return "未知章节练习";
+            W_QuestionStore store = Orm.Single<W_QuestionStore>(x => x.ID == storeId);
+            if (store == null)
+                return "未知章节练习";
+            return store.Name + " " + parent.Name + " " + chapter.Name;
+        }
+
+        public IList GetStudentPraticeList(string StuId, W_CollectionModel page)
+        {
+            return QueryForList("GetStudentPraticeList", new { StuId, StoreId = page.QuestionStore_ID, pageIndex = (page.PageIndex - 1) * page.PageSize, pageSize = page.PageSize, pageStatus = page.PageStatus });
+        }
+
+        public int GetStudentPraticeCount(string StuId, int StoreId)
+        {
+            return SqlMapper.QueryForObject<int>("GetStudentPraticeCount", new { StuId, StoreId, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 获取我的题目信息数目
+        /// </summary>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        public dynamic GetMyQuestionInfo(int ID, string stuId)
+        {
+            return QueryForList("GetMyQuestionInfo", new { ID, stuId });
+        }
+    }
+}

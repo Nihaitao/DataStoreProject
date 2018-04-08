@@ -1,0 +1,416 @@
+﻿using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using DataStoreProject.Model.Entity.Chapters;
+using DataStoreProject.Model.Entity.Order;
+using DataStoreProject.Model.ViewModel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataStoreProject.Business
+{
+    public class OrderSerchMapper : BaseMapper
+    {
+        /// <summary>
+        ///查询评论列表 by nht 2017-08-16
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public List<OrderSearch> GetOrderList(OrderSearch model, int System_Station_ID)
+        {
+            if (model.SearchName == "Name")
+            {
+                return SqlMapper.QueryForList<OrderSearch>("GetOrderList", new { System_Station_ID = System_Station_ID, OrderNo = model.OrderNo, CardNumber = model.CardNumber, Name = model.SearchValue, PayStartTime = model.PayStartTime, PayEndTime = model.PayEndTime, PayType = model.PayType, PayStatus = model.PayStatus, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+            }
+            else if (model.SearchName == "CardNumber")
+            {
+                return SqlMapper.QueryForList<OrderSearch>("GetOrderList", new { System_Station_ID = System_Station_ID, OrderNo = model.OrderNo, Name = model.Name, CardNumber = model.SearchValue, PayStartTime = model.PayStartTime, PayEndTime = model.PayEndTime, PayType = model.PayType, PayStatus = model.PayStatus, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+            }
+            else if (model.SearchName == "OrderNo")
+            {
+                return SqlMapper.QueryForList<OrderSearch>("GetOrderList", new { System_Station_ID = System_Station_ID, CardNumber = model.CardNumber, Name = model.Name, OrderNo = model.SearchValue, PayStartTime = model.PayStartTime, PayEndTime = model.PayEndTime, PayType = model.PayType, PayStatus = model.PayStatus, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+            }
+            else
+            {
+                return SqlMapper.QueryForList<OrderSearch>("GetOrderList", new { System_Station_ID = System_Station_ID, OrderNo = model.OrderNo, CardNumber = model.CardNumber, Name = model.Name, PayStartTime = model.PayStartTime, PayEndTime = model.PayEndTime, PayType = model.PayType, PayStatus = model.PayStatus, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+            }
+        }
+
+        /// <summary>
+        /// 查询评论列表总条数
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public int GetOrderListTotalCount(OrderSearch model, int System_Station_ID)
+        {
+            if (model.SearchName == "Name")
+            {
+                return SqlMapper.QueryForObject<int>("GetOrderListTotalCount", new { System_Station_ID = System_Station_ID, OrderNo = model.OrderNo, CardNumber = model.CardNumber, Name = model.SearchValue, PayStartTime = model.PayStartTime, PayEndTime = model.PayEndTime, PayType = model.PayType, PayStatus = model.PayStatus, pageStatus = 0 });
+            }
+            else if (model.SearchName == "CardNumber")
+            {
+                return SqlMapper.QueryForObject<int>("GetOrderListTotalCount", new { System_Station_ID = System_Station_ID, OrderNo = model.OrderNo, Name = model.Name, CardNumber = model.SearchValue, PayStartTime = model.PayStartTime, PayEndTime = model.PayEndTime, PayType = model.PayType, PayStatus = model.PayStatus, pageStatus = 0 });
+            }
+            else if (model.SearchName == "OrderNo")
+            {
+                return SqlMapper.QueryForObject<int>("GetOrderListTotalCount", new { System_Station_ID = System_Station_ID, CardNumber = model.CardNumber, Name = model.Name, OrderNo = model.SearchValue, PayStartTime = model.PayStartTime, PayEndTime = model.PayEndTime, PayType = model.PayType, PayStatus = model.PayStatus, pageStatus = 0 });
+            }
+            else
+            {
+                return SqlMapper.QueryForObject<int>("GetOrderListTotalCount", new { System_Station_ID = System_Station_ID, CardNumber = model.CardNumber, OrderNo = model.OrderNo, PayStartTime = model.PayStartTime, PayEndTime = model.PayEndTime, PayType = model.PayType, PayStatus = model.PayStatus, Name = model.Name, pageStatus = 0 });
+            }
+        }
+
+        /// <summary>
+        /// 学生开课数据录入
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public bool AddOrderStudent(OrderModel model, int System_Station_ID, string StuId)
+        {
+            bool flag = false;
+            string stuID = string.IsNullOrEmpty(StuId) ? model.StuId : StuId;
+            Random ran = new Random();
+            model.AddTime = DateTime.Now;
+            model.PayTime = DateTime.Now;
+            model.OrderNo = DateTime.Now.ToString("yyyyMMddHHmmss") + ran.Next(1000, 9999).ToString();
+            model.StuId = stuID;
+            model.System_Station_ID = System_Station_ID;
+            model.OrderId = Guid.NewGuid().ToString("N").ToUpper();
+
+            if (!string.IsNullOrWhiteSpace(model.Course_IDs))
+            {
+                W_Order order = new W_Order();
+                order.StuId = model.StuId;
+                order.OrderNo = model.OrderNo;
+                order.System_Station_ID = model.System_Station_ID;
+                order.AddTime = model.AddTime;
+                order.Price = model.Price;
+                order.PayStatus = model.PayStatus;
+                order.PayType = model.PayType;
+                order.PayTime = model.PayTime;
+                order.PayPrice = model.PayPrice;
+                order.TicketNumber = model.TicketNumber;
+                order.OrderState = model.OrderState;
+                order.OrderId = model.OrderId;
+
+                try
+                {
+                    SqlMapper.BeginTransaction();//开启事务
+
+                    //添加订单
+                    int id = (int)Orm.Insert(order, true);
+                    if (id > 0)
+                    {
+                        string[] c_id = model.Course_IDs.Split(',');
+                        string[] c_price = model.Prices.Split(',');
+                        for (int i = 0; i < c_id.Length; i++)
+                        {
+                            W_Order_Detail orderdetail = new W_Order_Detail();
+                            orderdetail.CID = id;
+                            orderdetail.Course_ID = int.Parse(c_id[i]);
+                            orderdetail.Price = decimal.Parse(c_price[i]);
+
+                            //添加订单详细
+                            Orm.Insert(orderdetail);
+                        }
+
+                        flag = true;
+                    }
+
+                    SqlMapper.CommitTransaction();  //提交
+                }
+                catch (Exception ex)
+                {
+                    SqlMapper.RollBackTransaction(); //回滚
+                    throw new ApiException(ex.Message);
+                }
+                finally
+                {
+                    //SqlMapper.CloseConnection();
+                }
+            }
+            return flag;
+        }
+
+        /// <summary>
+        /// 订单数据回滚 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool DeleteOrder(int id)
+        {
+            SqlMapper.BeginTransaction();
+            try
+            {
+                Orm.Delete<W_Order>(x => x.ID == id);
+                Orm.Delete<W_Order_Detail>(x => x.CID == id);
+                SqlMapper.CommitTransaction();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                SqlMapper.RollBackTransaction();
+                throw ex;
+            }
+        }
+
+
+        /// <summary>
+        /// 删除订单课程 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool DeleteOrderCourse(CampusModel model)
+        {
+            bool flag = false;
+            W_Order_Detail Ordermodel = Orm.Single<W_Order_Detail>(x => x.ID == model.orderDetailId);
+            if (Ordermodel == null)
+            {
+                throw new ApiException("未找到该数据，请刷新后再试");
+            }
+
+            try
+            {
+                SqlMapper.BeginTransaction();//开启事务
+                if (SqlMapper.Update("DeleteOrderCourse", new { orderDetailId = model.orderDetailId }) > 0)
+                {
+                    int count = SqlMapper.QueryForObject<int>("OrderByDetailId_Count", new { CID = Ordermodel.CID });
+                    if (count == 0)
+                    {
+                        SqlMapper.Update("UpdateW_OrderState", new { CID = Ordermodel.CID });
+                    }
+                    else
+                    {
+                        SqlMapper.Update("UpdateW_OrderPrice", new { CID = Ordermodel.CID });
+                    }
+                    flag = true;
+                }
+                SqlMapper.CommitTransaction();  //提交
+            }
+            catch (Exception ex)
+            {
+                SqlMapper.RollBackTransaction(); //回滚
+                throw new ApiException(ex.Message);
+            }
+            finally
+            {
+                //SqlMapper.CloseConnection();
+            }
+
+            return flag;
+        }
+
+        /// <summary>
+        /// 批量删除订单课程 hx add 2018-01-12
+        /// </summary>
+        public bool DeleteOrderCourseByCID(CampusModel model)
+        {
+            bool flag = false;
+            if (string.IsNullOrEmpty(model.Ids))
+            {
+                throw new ApiException("删除参数Ids，不能为空！");
+            }
+
+            string[] ids = model.Ids.Split(',');
+            if (ids.Length > 0)
+            {
+                try
+                {
+                    SqlMapper.BeginTransaction();//开启事务
+
+                    for (int i = 0; i < ids.Length; i++)
+                    {
+                        if (!string.IsNullOrEmpty(ids[i]))
+                        {
+                            SqlMapper.Update("DeleteOrderCourseByCID", new { CID = ids[i] });
+                            SqlMapper.Update("UpdateW_OrderState", new { CID = ids[i] });
+                        }
+                    }
+                    
+                    SqlMapper.CommitTransaction();  //提交
+
+                    flag = true;
+                }
+                catch (Exception ex)
+                {
+                    SqlMapper.RollBackTransaction(); //回滚
+                    throw new ApiException(ex.Message);
+                }
+                finally
+                {
+                    //SqlMapper.CloseConnection();
+                }
+            }
+
+            return flag;
+        }
+
+        /// <summary>
+        /// 某学生订单列表数据 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public List<OrderStudentModel> GetOrderDetailListByStuId(CampusModel model, string StuId, int System_Station_ID)
+        {
+            return SqlMapper.QueryForList<OrderStudentModel>("GetCourseCommentList", new { System_Station_ID = System_Station_ID, StuId = StuId, PayStatus = model.PayStatus, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+        }
+
+        /// <summary>
+        /// 某学生订单列表数据总条数
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public int GetOrderDetailListByStuIdCount(CampusModel model, string StuId, int System_Station_ID)
+        {
+            return SqlMapper.QueryForObject<int>("GetCourseCommentList", new { System_Station_ID = System_Station_ID, StuId = StuId, PayStatus = model.PayStatus, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 获取购物车内课程信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public List<W_Course> GetShoppingCar(string StuId)
+        {
+            return SqlMapper.QueryForList<W_Course>("GetShoppingCar", new { stuId = StuId }).ToList();
+        }
+
+        /// <summary>
+        /// 从购物车移除
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool MoveOutShoppingCar(CampusModel model, string StuId)
+        {
+            return QueryForList("MoveOutShoppingCar", new { stuId = StuId, Course_ID = model.Course_ID }).Count > 0;
+        }
+
+        /// <summary>
+        /// 购物车生成订单
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public dynamic AddOrderFromShoppingCar(string StuId, int System_Station_ID)
+        {
+            List<W_Course> Courses = GetShoppingCar(StuId);
+            if (Courses != null && Courses.Count > 0)
+            {
+                bool flag = false;
+                DateTime time = DateTime.Now;
+                W_Order order = new W_Order();
+                order.AddTime = time;
+                order.PayTime = time;
+                order.OrderNo = time.ToString("yyyyMMddHHmmss") + new Random().Next(1000, 9999).ToString();
+                order.StuId = StuId;
+                order.System_Station_ID = System_Station_ID;
+                order.Price = Courses.Sum(x => x.Price);
+                if (order.Price == 0)//免费课程直接支付成功
+                {
+                    order.PayStatus = 1;
+                    order.PayTime = time;
+                    order.TicketNumber = time.ToString("yyyyMMddHHmmss") + new Random().Next(1000, 9999).ToString();
+                    order.PayType = 1;
+                }
+                order.OrderId = Guid.NewGuid().ToString("N").ToUpper();
+                if (Orm.Insert(order) > 0)
+                {
+                    foreach (W_Course course in Courses)
+                    {
+                        W_Order_Detail orderdetail = new W_Order_Detail();
+                        orderdetail.CID = order.ID;
+                        orderdetail.Course_ID = course.ID;
+                        orderdetail.Price = course.Price;
+                        flag = Orm.Insert(orderdetail) > 0;
+                        if (!flag)
+                        {
+                            DeleteOrder(order.ID);
+                            break;
+                        }
+                    }
+                    if (flag)//清空购物车
+                        ClearShoppingCar(StuId);
+                    return order;
+                }
+                else
+                {
+                    throw new ApiException("下单失败");
+                }
+            }
+            else
+            {
+                throw new ApiException("您的购物车空空如也");
+            }
+        }
+
+        /// <summary>
+        /// 清空购物车
+        /// </summary>
+        /// <param name="stuId"></param>
+        public bool ClearShoppingCar(string stuId)
+        {
+            return QueryForList("ClearShoppingCar", new { stuId = stuId }).Count > 0;
+        }
+
+
+        /// <summary>
+        /// 某学生订单列表数据
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public dynamic GetOrderDetailListByStuId(PageModel model, string StuId, int System_Station_ID, int PayStatus)
+        {
+            List<OrderStudentModel> List = SqlMapper.QueryForList<OrderStudentModel>("GetOrderListByStuId", new
+            {
+                StuId = StuId,
+                System_Station_ID = System_Station_ID,
+                PayStatus = PayStatus,
+                pageIndex = (model.PageIndex - 1) * model.PageSize,
+                pageSize = model.PageSize,
+                pageStatus = model.PageStatus
+            }).ToList();
+
+            if (List != null)
+            {
+                List.ForEach(x =>
+                {
+                    x.OrderDetailList = GetOrderDetailList(x.ID);
+                });
+            }
+            return List;
+        }
+        public int GetOrderDetailListByStuId_TotalCount(PageModel model, string StuId, int System_Station_ID, int PayStatus)
+        {
+            return SqlMapper.QueryForObject<int>("GetOrderListByStuId_TotalCount", new
+            {
+                StuId = StuId,
+                System_Station_ID = System_Station_ID,
+                PayStatus = PayStatus,
+                pageStatus = 0
+            });
+        }
+
+        /// <summary>
+        /// 查看某开课订单的明细数据 
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <returns></returns>
+        public List<OrderDetailList> GetOrderDetailList(int orderId)
+        {
+            return SqlMapper.QueryForList<OrderDetailList>("GetOrderDetailList", new { orderId = orderId }).ToList();
+        }
+
+        /// <summary>
+        /// 我的课程列表
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public List<OrderMyCourseList> GetOrderListByCourse(CampusModel model, string StuId, int System_Station_ID)
+        {
+            return SqlMapper.QueryForList<OrderMyCourseList>("GetOrderListByCourse", new { System_Station_ID = System_Station_ID, topNum = model.topNum, StuId = StuId, TeachingMethod = model.TeachingMethod }).ToList();
+        }
+
+    }
+}

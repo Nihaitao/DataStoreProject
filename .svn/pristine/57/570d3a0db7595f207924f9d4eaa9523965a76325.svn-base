@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<sqlMap namespace="H_StationAccountMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <statements>
+    <select id="GetTeacherByWhere" resultClass="DataStoreProject.Model.ViewModel.TeacherModel" parameterClass="map">
+      select a.System_Station_ID,a.Valid,a.ID as TeacherDetail_ID,b.*
+      from t_teacherinfo_detail a
+      left join t_teacherinfo b on a.Teacher_ID = b.ID
+      where a.System_Station_ID = #System_Station_ID#
+      <isNotNull property="CardNo">
+        <isNotEmpty prepend="and" property="CardNo">
+          b.CardNo = #CardNo#
+        </isNotEmpty>
+      </isNotNull>
+      <isGreaterThan prepend="and" property="TeacherDetail_ID" compareValue ="0">
+        a.ID = #TeacherDetail_ID#
+      </isGreaterThan>
+    </select>
+
+    <select id="GetPhoneByWhere" resultClass="DataStoreProject.Model.ViewModel.TeacherModel" parameterClass="map">
+      SELECT * from t_teacherinfo a left JOIN t_teacherinfo_detail b on a.ID=b.Teacher_ID  where Phone=#Phone# and b.System_Station_ID=#System_Station_ID#
+    </select>
+
+    <select id="GetTeacherByCard" resultClass="DataStoreProject.Model.Entity.Teacher.T_TeacherInfo" parameterClass="map">
+      select ID,Name,Sex,CardNo,JobTitle,HeadImage,Phone,Email,Birthday,Address,Education_ID,GraduateSchool,introduction
+      from t_teacherinfo
+      where CardNo = #CardNo#
+    </select>
+    
+    <select id="GetTeacherDetailDiscipline" resultClass="DataStoreProject.Model.ViewModel.T_TeacherInfo_Detail_DisciplineModel" parameterClass="map">
+      select * from T_TeacherInfo_Detail_Discipline where TeacherDetail_ID = #TeacherDetail_ID# and System_Station_ID=#System_Station_ID#
+    </select>
+    
+    <update id="TeacherUpdate" parameterClass="map">
+      <!--update t_teacherinfo a
+      inner join t_teacherinfo_detail b on a.ID = b.Teacher_ID
+      set a.Name = #Name#,a.Sex=#Sex#,a.CardNo=#CardNo#,a.JobTitle=#JobTitle#,a.HeadImage=#HeadImage#,a.Phone=#Phone#,a.Email=#Email#,
+      a.Birthday=#Birthday#,a.Address=#Address#,a.Education_ID=#Education_ID#,a.GraduateSchool=#GraduateSchool#,a.introduction=#introduction#
+      where b.System_Station_ID = #System_Station_ID# and a.ID = #ID#-->
+      update t_teacherinfo 
+      set Name = #Name#,Sex=#Sex#,CardNo=#CardNo#,JobTitle=#JobTitle#,HeadImage=#HeadImage#,Phone=#Phone#,Email=#Email#,
+      Birthday=#Birthday#,Address=#Address#,Education_ID=#Education_ID#,GraduateSchool=#GraduateSchool#,introduction=#introduction#
+      where ID = #ID#
+    </update>
+
+    <delete id="DeleteTeacherDiscipline" parameterClass="map">
+      DELETE FROM t_teacherinfo_detail_discipline WHERE TeacherDetail_ID=#TeacherDetail_ID# AND System_Station_ID=#System_Station_ID#
+    </delete>
+
+    <select id="ExistCourseByTeacherID" resultClass="int" parameterClass="map">
+      select count(1) from w_course a
+      left join t_teacherinfo_detail b on a.TeacherDetail_ID = b.ID
+      where b.ID = #TeacherDetail_ID# and b.System_Station_ID = #System_Station_ID#
+    </select>
+
+    <delete id="DeleteTeacher" parameterClass="map">
+      delete from t_teacherinfo_detail where ID=#TeacherDetail_ID# and System_Station_ID=#System_Station_ID#
+    </delete>
+
+    <update id="TeacherValid" parameterClass="map">
+      update t_teacherinfo_detail SET Valid = #Valid# WHERE ID=#TeacherDetail_ID# and System_Station_ID=#System_Station_ID#
+    </update>
+
+    <select id="GetAllTeachers_TotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid="GetAllTeachers_Fragment"></include>
+    </select>
+    <select id="GetAllTeachers" resultClass="map" parameterClass="map">
+      select view1.*
+      <include refid="GetAllTeachers_Fragment"></include>
+    </select>
+    <sql id="GetAllTeachers_Fragment">
+     
+      <!--(select CONCAT('|',group_concat(d.Discipline_ID SEPARATOR '|'),'|')
+      from t_teacherinfo_detail_discipline d
+      where d.System_Station_ID = a.System_Station_ID and d.TeacherDetail_ID = a.ID) as Teacher_DisciplineIDs-->
+      from (
+      select a.System_Station_ID,a.Valid,b.ID,a.ID as TeacherDetail_ID,t.Discipline_ID,b.Name,b.Sex,b.CardNo,b.JobTitle,b.HeadImage,b.Phone,b.Email,b.Birthday,b.Address,b.GraduateSchool,b.introduction
+      from t_teacherinfo_detail a
+      LEFT join t_teacherinfo_detail_discipline t on t.TeacherDetail_ID=a.ID
+      left join t_teacherinfo b on a.Teacher_ID = b.ID
+      left join h_dictionary c on c.id = b.Education_ID and c.ColumnName ='Education_ID'
+      ) view1 where System_Station_ID=#System_Station_ID#
+      <isNotNull property="Valid">
+        <isEqual prepend="and" property="Valid" compareValue="0">
+          Valid = 0
+        </isEqual>
+        <isGreaterThan prepend="and" property="Valid" compareValue ="0">
+          Valid = #Valid#
+        </isGreaterThan>
+      </isNotNull>
+      <isNotNull property="Name">
+        <isNotEmpty prepend="and" property="Name">
+          `Name` like '%$Name$%'
+        </isNotEmpty>
+      </isNotNull>
+      <isGreaterThan prepend="and" property="Discipline_ID" compareValue ="0">
+        Discipline_ID in (SELECT ID FROM w_discipline WHERE FIND_IN_SET(ID,GetChildList(#Discipline_ID#,'w_discipline')))
+      </isGreaterThan>
+      order by Valid desc,TeacherDetail_ID desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+  </statements>
+</sqlMap>

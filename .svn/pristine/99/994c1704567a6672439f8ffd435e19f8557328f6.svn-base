@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="DemoMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="selectTestStatement" resultClass="map" parameterClass="map">
+      select * from Test
+      <dynamic prepend="where">
+        <isNotEmpty prepend="and" property="name">
+          `name`=#name#
+        </isNotEmpty>
+        <isNotNul property="id">
+          <isNotEmpty prepend="and" property="id">
+            `name`=#id#
+          </isNotEmpty>
+        </isNotNul>
+      </dynamic>
+    </select>
+    
+    <select id="selectDatainfo" resultClass="map" parameterClass="map">
+      SELECT d.*,h.`Name` as AddPersonName from w_datainfo d LEFT JOIN h_station_account h on d.AddPerson=h.Account_ID
+      where d.System_Station_ID=#System_Station_ID#
+
+    </select>
+    
+    <select id="selectDownInfo" resultClass="map" parameterClass="map">
+      select Path,DownCount from w_datainfo
+      <dynamic prepend="where">
+        <isNotNul property="id">
+          <isNotEmpty prepend="and" property="id">
+            `ID`=#id#
+          </isNotEmpty>
+        </isNotNul>
+      </dynamic>
+    </select>
+    
+    <insert id="addTest" parameterClass="map">
+      insert into `Test` (name) values(#Name#)
+    </insert>
+  </statements>
+</sqlMap>

@@ -1,0 +1,90 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
+using CommonFramework;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet.SqlMap;
+using CommonFramework.Mvc;
+using CommonFramework.Mvc.Attribute;
+using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.DataInfo;
+namespace DataStoreProject.Web.Controller
+{
+    public class ChaptersController : StationBaseApiController
+    {
+        
+        [HttpGet] 
+        ///获取全部章节列表根据题库ID
+        public dynamic GetChaptersList(int ID)
+        {
+            ChaptersMapper mapper = new ChaptersMapper();
+
+            var model = mapper.GetChaptersList(ID);
+            return Success(model, model.Count);
+        }
+
+        [HttpPost] 
+        //添加资料
+        public dynamic AddChapters(W_Chapters model)
+        {
+            if (model != null)
+            {
+                model.AddPerson = this.AccountID;
+                model.AddTime = DateTime.Now.ToString();
+                ChaptersMapper mapper = new ChaptersMapper();
+                var dict = mapper.AddChapters(model);
+                if(dict)
+                    return Success("操作成功");
+                else
+                    return Success("操作失败");
+            }
+            else 
+            {
+                return Success("操作失败");
+            }
+        }
+
+        [HttpPost]
+        public dynamic UpdateChapters(W_Chapters model)
+        {
+            if (model != null)
+            {
+                ChaptersMapper mapper = new ChaptersMapper();
+
+                if (mapper.UpdateChapters(model))
+                    return Success("操作成功");
+                else
+                    return Success("操作失败");
+            }
+            else 
+            {
+                return Success("操作失败");
+            }
+        }
+
+        [HttpPost]
+        public dynamic DeleteChapters(int ID)
+        {
+            ChaptersMapper mapper = new ChaptersMapper();
+
+            if (mapper.DeleteChapters(ID))
+                return Success("操作成功");
+            else
+                return Success("操作失败");
+        }
+
+        [HttpPost]
+        ///根据ID和Valid启用状态修改状态，反回int类型的修改行数
+        public int Enabledisable(int ID,int Valid)
+        {
+            ChaptersMapper mapper = new ChaptersMapper();
+
+            return mapper.Enabledisable(ID, Valid);
+           
+        }
+    }
+}

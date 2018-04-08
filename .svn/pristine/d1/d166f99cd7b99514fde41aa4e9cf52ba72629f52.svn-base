@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetCampusListTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetCampusList_Fragment"></include>
+    </select>
+    <select id="GetCampusList" resultClass="map" parameterClass="map">
+      select  *,(select Name from h_station_account as b where a.AddPerson=b.Account_ID and b.System_Station_ID=#System_Station_ID#) as AddPersonName  
+      <include refid ="GetCampusList_Fragment"></include>
+    </select>
+
+    <sql id="GetCampusList_Fragment">
+      from   W_Campus as a  where  System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        Valid=#Valid#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Name">
+        `Name` like concat('%',#Name#,'%')
+      </isNotEmpty>
+      order by Valid desc,ID asc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+  </statements>
+</sqlMap>

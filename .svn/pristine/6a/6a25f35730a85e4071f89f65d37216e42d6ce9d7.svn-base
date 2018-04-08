@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetInterlocutionListByCuIdCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetInterlocutionListByCuId_Fragment"></include>
+    </select>
+    <select id="GetInterlocutionListByCuId" resultClass="DataStoreProject.Model.ViewModel.CInterlocutionModel" parameterClass="map">
+      select a.ID,a.Course_ID CourseId,b.Name CourseName,a.Chapter_ID ChapterId,c.Name ChapterName,a.Content as CommentContent,a.AddTime as AddCommentTime,
+      a.Student_ID StudentId,d.Name StudentName,a.Account_ID AccountID,e.Name AccountName
+      <include refid ="GetInterlocutionListByCuId_Fragment"></include>
+    </select>
+    <sql id="GetInterlocutionListByCuId_Fragment">
+      from W_Course_Interlocution a
+      left join w_course b on a.Course_ID = b.ID
+      left join w_course_chapters c on a.Chapter_ID = c.ID
+      left join s_studentinfo d on a.Student_ID = d.StuId
+      left join h_station_account e on e.Account_ID = a.Account_ID where PID = 0 and b.System_Station_ID = #System_Station_ID#
+      <isGreaterThan compareValue="0" prepend="and" property="Course_ID">
+        a.Course_ID = #Course_ID#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="Discipline_ID">
+        a.Course_ID in (select ID from w_course where Discipline_ID = #Discipline_ID#)
+      </isGreaterThan>
+      order by a.AddTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetNewInterlocution" resultClass="DataStoreProject.Model.ViewModel.CNewInterlocution" parameterClass="map">
+      select a.PID,a.Content as ReplyContent,a.AddTime as AddReplyTime,a.Student_ID StudentId,d.Name StudentName,a.Account_ID AccountID,e.Name AccountName
+      from W_Course_Interlocution a
+      left join w_course b on a.Course_ID = b.ID
+      left join s_studentinfo d on a.Student_ID = d.StuId
+      left join h_station_account e on e.Account_ID = a.Account_ID
+      where PID > 0 and b.System_Station_ID = #System_Station_ID#
+      <isGreaterThan compareValue="0" prepend="and" property="Discipline_ID">
+        a.Course_ID in (select ID from w_course where Discipline_ID = #Discipline_ID#)
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="Course_ID">
+        a.Course_ID = #Course_ID#
+      </isGreaterThan>
+    </select>
+
+    <delete id="DeleteCourseInterlocution" parameterClass="map">
+      Delete from W_Course_Interlocution where (ID in ($Ids$) or PID in ($Ids$)) 
+    </delete>
+
+
+    <select id="GetCourseCommentListCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetCourseCommentList_Fragment"></include>
+    </select>
+    <select id="GetCourseCommentList" resultClass="DataStoreProject.Model.ViewModel.CommentModel" parameterClass="map">
+      select a.ID,a.Course_ID CourseId,b.Name CourseName,a.Chapter_ID ChapterId,a.Valid,c.Name ChapterName,a.Content,a.AddTime,a.Student_ID StudentId,d.Name StudentName,
+      (select count(Comment_ID) from w_comment_thumbsup where Comment_ID=a.ID) as ThumbUp,(select count(Comment_ID) from w_comment_thumbsup where Comment_ID=a.ID and StuID=#StuID#) as MyThumbUp
+      <include refid ="GetCourseCommentList_Fragment"></include>
+    </select>
+    <sql id="GetCourseCommentList_Fragment">
+      from W_Course_Comment a
+      left join w_course b on a.Course_ID = b.ID
+      left join w_course_chapters c on a.Chapter_ID = c.ID
+      left join s_studentinfo d on a.Student_ID = d.StuId where 1=1 and b.System_Station_ID=#System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="Valid">
+        a.Valid = #Valid#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="Course_ID">
+         a.Course_ID = #Course_ID#
+      </isGreaterThan>
+      <isGreaterThan compareValue="0" prepend="and" property="Discipline_ID">
+        a.Course_ID in (select ID from w_course where Discipline_ID = #Discipline_ID#)
+      </isGreaterThan>
+      order by a.Valid desc,a.AddTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <delete id="DeleteCourseComment" parameterClass="map">
+      delete from W_Course_Comment where ID in (#Ids#)
+    </delete>
+
+    <update id="UpdataCommentValid" parameterClass="map">
+      update W_Course_Comment set valid=#Valid# where ID=#ID# 
+    </update>
+
+    <select id="GetCourseInterlocutionList" resultClass="DataStoreProject.Model.ViewModel.InterlocutionModel" parameterClass="map">
+      select a.ID,a.Course_ID CourseId,b.Name CourseName,a.Chapter_ID ChapterId,c.Name ChapterName,a.Content,a.AddTime,
+      a.Student_ID StudentId,d.Name StudentName,a.Account_ID AccountID,e.Name AccountName
+      from W_Course_Interlocution a
+      left join w_course b on a.Course_ID = b.ID
+      left join w_course_chapters c on a.Chapter_ID = c.ID
+      left join s_studentinfo d on a.Student_ID = d.StuId
+      left join h_station_account e on e.Account_ID = a.Account_ID and e.System_Station_ID = #System_Station_ID# where a.ID = #PID# or PID = #PID# order by AddTime
+    </select>
+
+
+    <select id="GetMyCourseInterlocutionCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetMyCourseInterlocution_Fragment"></include>
+    </select>
+    <select id="GetMyCourseInterlocution" resultClass="DataStoreProject.Model.ViewModel.InterlocutionModel" parameterClass="map">
+      select a.ID,a.Course_ID CourseId,b.Name CourseName,a.Chapter_ID ChapterId,c.Name ChapterName,a.Content,a.AddTime,
+      a.Student_ID StudentId,'我' StudentName,a.Account_ID AccountID,e.Name AccountName
+      <include refid ="GetMyCourseInterlocution_Fragment"></include>
+    </select>
+    <sql id="GetMyCourseInterlocution_Fragment">
+      from W_Course_Interlocution a
+      left join w_course b on a.Course_ID = b.ID
+      left join w_course_chapters c on a.Chapter_ID = c.ID
+      left join s_studentinfo d on a.Student_ID = d.StuId
+      left join h_station_account e on e.Account_ID = a.Account_ID and e.System_Station_ID = #System_Station_ID# where PID = 0 and a.Student_ID = #StudentID#
+      order by a.AddTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetMyNewInterlocution" resultClass="DataStoreProject.Model.ViewModel.NewInterlocution" parameterClass="map">
+      select a.PID,a.Content,a.AddTime,a.Student_ID StudentId,d.Name StudentName,a.Account_ID AccountID,e.Name AccountName
+      from W_Course_Interlocution a
+      left join s_studentinfo d on a.Student_ID = d.StuId
+      left join h_station_account e on e.Account_ID = a.Account_ID and e.System_Station_ID = #System_Station_ID#
+      where PID > 0
+    </select>
+
+    <select id="GetMyCourseCommentCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetMyCourseComment_Fragment"></include>
+    </select>
+    <select id="GetMyCourseComment" resultClass="DataStoreProject.Model.ViewModel.CommentModel" parameterClass="map">
+      select a.ID,a.Course_ID CourseId,b.Name CourseName,a.Chapter_ID ChapterId,c.Name ChapterName,a.Content,a.AddTime,a.Student_ID StudentId,'我' StudentName ,
+      (select count(Comment_ID) from w_comment_thumbsup where Comment_ID=a.ID) as ThumbUp
+      <include refid ="GetMyCourseComment_Fragment"></include>
+    </select>
+    <sql id="GetMyCourseComment_Fragment">
+      from W_Course_Comment a
+      left join w_course b on a.Course_ID = b.ID
+      left join w_course_chapters c on a.Chapter_ID = c.ID where a.Student_ID = #StudentID#
+      order by a.AddTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+  </statements>
+</sqlMap>

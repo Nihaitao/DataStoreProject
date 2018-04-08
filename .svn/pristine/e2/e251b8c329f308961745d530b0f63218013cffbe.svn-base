@@ -1,0 +1,235 @@
+﻿using CommonFramework.Exceptions;
+using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.Order;
+using DataStoreProject.Model.ViewModel;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Web;
+using System.Web.Http;
+using System.Web.Script.Serialization;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class OrderController : StationBaseApiController
+    {
+        OrderSerchMapper mapper = new OrderSerchMapper();
+        /// <summary>
+        /// 某机构开课列表 
+        /// </summary>
+        /// <modify>by nht 2017-11-27</modify>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetOrderList([FromUri]OrderSearch model)
+        {
+            return Success(mapper.GetOrderList(model, this.System_Station_ID), model.PageIndex == 1 ? mapper.GetOrderListTotalCount(model, this.System_Station_ID) : 0);
+        }
+        /// <summary>
+        /// 学生开课数据录入
+        /// </summary>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddOrderStudent(OrderModel order)
+        {
+            return Success(mapper.AddOrderStudent(order,this.System_Station_ID,this.StuId));
+        }
+
+        /// <summary>
+        /// 删除订单课程 hx add 2018-01-12 逻辑删除
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteOrderCourse(CampusModel model)
+        {
+            return Success(mapper.DeleteOrderCourse(model));
+        }
+
+        /// <summary>
+        /// 批量删除订单课程 hx add 2018-01-12 逻辑删除
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteOrderCourseByCID(CampusModel model)
+        {
+            return Success(mapper.DeleteOrderCourseByCID(model));
+        }
+
+        /// <summary>
+        /// 删除订单 hx add 2018-01-13 物理删除
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteNotPayOrder(int orderId = 0)
+        {
+            return Success(mapper.DeleteOrder(orderId,this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 加入购物车  hx add 2018-01-13 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic PutInShoppingCar(OrderModel OrderModel)
+        {
+            return Success(mapper.PutInShoppingCar(OrderModel.Course_IDs, this.StuId));
+        }
+
+        /// <summary>
+        /// 某学生订单列表数据 
+        /// </summary>
+        /// <returns></returns>
+        //[HttpGet]
+        //public dynamic GetOrderDetailListByStuId([FromUri]CampusModel model)
+        //{
+        //    return Success(mapper.GetOrderDetailListByStuId(model, this.StuId, this.System_Station_ID), model.PageIndex == 1 ? mapper.GetOrderDetailListByStuIdCount(model, this.StuId, this.System_Station_ID) : 0);
+        //}
+
+        /// <summary>
+        /// 获取购物车内课程信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetShoppingCar()
+        {
+            return Success(mapper.GetShoppingCar(this.StuId));
+        }
+
+        /// <summary>
+        /// 从购物车移除   
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic MoveOutShoppingCar(CampusModel model)
+        {
+            return Success(mapper.MoveOutShoppingCar(model,this.StuId));
+        }
+
+        /// <summary>
+        /// 购物车生成订单 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddOrderFromShoppingCar()
+        {
+            return Success(mapper.AddOrderFromShoppingCar(this.StuId, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 支付成功后的回调 hx add 2018-01-13
+        /// </summary>
+        /// <param name="post"></param>
+        /// <returns></returns>
+        [HttpPost, AllowAnonymous]
+        public dynamic PaySuccessDoSomething(PostModel post)
+        {
+            JavaScriptSerializer jss = new JavaScriptSerializer();
+            string JsonStr = jss.Serialize(post);
+            WriteLog("[" + DateTime.Now.ToString() + "]post参数： " + JsonStr, "LOG");
+            if (post.ResultBool)
+            {
+                //修改订单状态
+                mapper.UpdateOrderInfo(post.OrderId, post.OnlinePayId, post.PayTime);
+                return "success";
+            }
+            return "fail";
+        }
+
+        public void WriteLog(string str, string SaveDirectory)
+        {
+            try
+            {
+                if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + SaveDirectory))
+                    Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + SaveDirectory);
+                string dz = AppDomain.CurrentDomain.BaseDirectory + SaveDirectory + "\\" + DateTime.Now.ToString("yyyy-MM-dd") + ".txt";
+                //if (!System.IO.File.Exists(dz))//判断是否存在该文件
+                //    File.Create(dz);//创建指定文件
+                //FileStream f = new FileStream(dz, FileMode.Append);
+                StreamWriter sw = new StreamWriter(dz, true);
+                sw.Write(str);
+                sw.Close();
+                sw.Dispose();
+
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 获取订单信息  hx add 2018-01-13
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetOrderById(string orderId)
+        {
+            return Success(mapper.GetOrderById(orderId));
+        }
+
+        /// <summary>
+        /// 获取支付订单信息  hx add 2018-01-13
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetOrderPayById(string orderId)
+        {
+            return Success(mapper.GetOrderPayById(orderId));
+        }
+
+        /// <summary>
+        /// 某学生订单列表数据 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetOrderDetailListByStuId([FromUri]CampusModel model,int PayStatus = -1)
+        {
+            string stuID = string.Empty;
+            if (string.IsNullOrEmpty(model.StuId))
+            {
+                if (string.IsNullOrEmpty(this.StuId))
+                {
+                    throw new ApiException("StuId 异常，请重新登录！");
+                }
+                stuID = this.StuId;
+            }
+            else
+            {
+                stuID = model.StuId;
+            }
+
+            var dict = mapper.GetOrderDetailListByStuId(model, stuID, this.System_Station_ID, PayStatus);
+            return Success(dict, model.PageIndex == 1 ? mapper.GetOrderDetailListByStuId_TotalCount(model, stuID, this.System_Station_ID, PayStatus) : 0);
+        }
+
+        /// <summary>
+        /// 查看订单明细列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetOrderDetailList(int orderId)
+        {
+            return Success(mapper.GetOrderDetailList(orderId));
+        }
+
+        /// <summary>
+        /// 我的课程列表 
+        /// </summary>
+        [HttpGet]
+        public dynamic GetOrderListByCourse([FromUri]CampusModel model)
+        {
+            return Success(mapper.GetOrderListByCourse(model, this.StuId, this.System_Station_ID));
+        }
+
+        [HttpGet]
+        public dynamic GetMyCourseList([FromUri]PageModel page)
+        {
+            return Success(mapper.GetMyCourseList(page, this.StuId, 42), page.PageIndex == 1 ? mapper.GetMyCourseCounts(this.StuId, 42) : 0);//this.System_Station_ID
+        }
+    }
+}

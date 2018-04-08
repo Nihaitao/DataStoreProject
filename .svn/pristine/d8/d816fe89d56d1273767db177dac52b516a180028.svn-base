@@ -1,0 +1,32 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataStoreProject.Model.ViewModel
+{
+    /// <summary>
+    /// 分页Model
+    /// </summary>
+    public class QuestionStoreRequest : PageModel
+    {
+        public QuestionStoreRequest() { Valid = -1; }
+        /// <summary>
+        /// 名称
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// 科次ID
+        /// </summary>
+        public int DisciplineId { get; set; }
+
+        /// <summary>
+        /// 启用/禁用
+        /// </summary>
+        public int Valid { get; set; }
+
+    }
+   
+}

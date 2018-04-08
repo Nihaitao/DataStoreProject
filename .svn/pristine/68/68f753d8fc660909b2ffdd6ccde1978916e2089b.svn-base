@@ -1,0 +1,260 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.Entity.Chapters;
+using DataStoreProject.Model.Entity.Question;
+using DataStoreProject.Model.Entity.ExamPaper;
+using DataStoreProject.Model.Entity;
+using DataStoreProject.Model.ViewModel;
+using DataStoreProject.Model.Entity.Discipline;
+using DataStoreProject.Model.Entity.Campus;
+
+namespace DataStoreProject.Business
+{
+    public class CampusMapper : BaseMapper
+    {
+        /// <summary>
+        /// 根据对应条件查询校区数据
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public IList GetCampusList(CampusModel model, int System_Station_ID)
+        {
+            return QueryForList("GetCampusList", new { Valid = model.Valid, Name = model.Name, System_Station_ID = System_Station_ID, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus });
+        }
+
+        /// <summary>
+        /// 根据对应条件查询校区数据总条数
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public int GetCampusListTotalCount(CampusModel model, int System_Station_ID)
+        {
+            return SqlMapper.QueryForObject<int>("GetCampusListTotalCount", new { Valid = model.Valid, System_Station_ID = System_Station_ID, Name = model.Name, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 根据校区id查找对应数据
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public W_Campus GetCampusByID(int ID, int System_Station_ID)
+        {
+            return Orm.Single<W_Campus>(x => x.ID == ID && x.System_Station_ID == System_Station_ID);
+        }
+
+        /// <summary>
+        /// 启用禁用校区
+        /// </summary>
+        /// <returns></returns>
+        public dynamic UpdateValid(CampusModel Model, int System_Station_ID)
+        {
+            W_Campus campusmodel = Orm.Single<W_Campus>(x => x.ID == Model.ID && x.System_Station_ID == System_Station_ID);
+            if (campusmodel == null) 
+            {
+                throw new ApiException("操作失败，请稍后再试");    
+            }
+            if (Model.Valid == 0) {
+                W_ClassRoom roommodel = Orm.Single<W_ClassRoom>(x => x.CampusID == Model.ID && x.System_Station_ID == System_Station_ID);
+                if (roommodel != null)
+                {
+                    throw new ApiException("该校区下面存在教室，不能禁用");
+                }
+            }
+            campusmodel.Valid = Model.Valid;
+            if (Orm.Update(campusmodel) <= 0) 
+            {
+                throw new ApiException("修改失败");    
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 删除校区
+        /// </summary>
+        /// <returns></returns>
+        public bool DeleteCampus(CampusModel Model, int System_Station_ID)
+        {
+            W_Campus campusmodel = Orm.Single<W_Campus>(x => x.ID == Model.ID && x.System_Station_ID == System_Station_ID);
+            
+            if (campusmodel == null )
+            {
+                throw new ApiException("操作失败，未找到要操作的数据，请刷新再试");
+            }
+            if (campusmodel.Valid == 1)
+            {
+                throw new ApiException("启用状态中，不能删除");
+            }
+            W_ClassRoom roommodel = Orm.Single<W_ClassRoom>(x => x.CampusID == Model.ID && x.System_Station_ID == System_Station_ID);
+            if (roommodel != null) 
+            {
+                throw new ApiException("该校区下面存在教室，不能删除");
+            }
+            if (Orm.Delete(campusmodel) <= 0 ) 
+            {
+                throw new ApiException("删除失败，请重试");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 根据对应条件查询教室数据
+        /// </summary>
+        /// <returns></returns>
+        /// 
+        public dynamic GetClassRoomList(ClassRoomModel model, int System_Station_ID)
+        {
+            return QueryForList("GetClassRoomList", new { ClassRoomType_ID = model.ClassRoomType_ID, CampusID = model.CampusID, Name = model.Name, Valid = model.Valid, System_Station_ID = System_Station_ID, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus });
+        }
+        /// <summary>
+        /// 根据对应条件查询教室数据总条数
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public int GetClassRoomListTotalCount(ClassRoomModel model, int System_Station_ID)
+        {
+            return SqlMapper.QueryForObject<int>("GetCampusListTotalCount", new { ClassRoomType_ID = model.ClassRoomType_ID, CampusID = model.CampusID, Name = model.Name, Valid = model.Valid, System_Station_ID = System_Station_ID, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 启用禁用教室
+        /// </summary>
+        /// <returns></returns>
+        public dynamic UpdateClassRoomValid(ClassRoomModel Model, int System_Station_ID)
+        {
+            W_ClassRoom ClassRoomModel = Orm.Single<W_ClassRoom>(x => x.ID == Model.ID && x.System_Station_ID == System_Station_ID);
+            if (ClassRoomModel == null)
+            {
+                throw new ApiException("操作失败，请稍后再试");
+            }
+            ClassRoomModel.Valid = Model.Valid;
+            if (Orm.Update(ClassRoomModel) <= 0)
+            {
+                throw new ApiException("修改失败");
+            }
+            return true;
+        }
+
+        /// <summary>
+        ///  删除教室
+        /// </summary>
+        /// <returns></returns>
+        public bool DeleteClassRoom(ClassRoomModel Model, int System_Station_ID)
+        {
+            W_ClassRoom ClassRoomModel = Orm.Single<W_ClassRoom>(x => x.ID == Model.ID && x.System_Station_ID == System_Station_ID);
+            if (ClassRoomModel == null)
+            {
+                throw new ApiException("操作失败，您要删除的教室不存在");
+            }
+            if (Orm.Delete(ClassRoomModel) <= 0)
+            {
+                throw new ApiException("删除失败，请重试");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 根据校区教室id查找对应数据  
+        /// </summary>
+        /// <returns></returns>
+        public IList GetClassRoomByID(int ID, int System_Station_ID)
+        {
+            return QueryForList("GetClassRoomByID", new { ID = ID, System_Station_ID = System_Station_ID });
+        }
+
+        /// <summary>
+        ///添加修改校区教室
+        /// </summary>
+        public bool SaveClassRoom(W_ClassRoom Model, int System_Station_ID, int AccountID)
+        {
+           
+            if (Model.ID > 0)//修改
+            {
+                ///判断数据是否存在
+                W_ClassRoom model = Orm.Single<W_ClassRoom>(x => x.ID == Model.ID && x.System_Station_ID == System_Station_ID);
+                if (model == null)
+                {
+                    throw new ApiException("操作失败，未找到对应的数据！");
+                }
+                Model.System_Station_ID = model.System_Station_ID;
+                Model.AddPerson = model.AddPerson;
+                Model.AddTime = model.AddTime;
+                Model.Valid = model.Valid;
+                if (Orm.Update(Model) > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else//添加
+            {
+                Model.AddPerson = AccountID;
+                Model.AddTime = DateTime.Now;
+                Model.Valid = 1;
+                Model.System_Station_ID = System_Station_ID;
+                if (Orm.Insert(Model) > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
+        ///添加修改校区
+        /// </summary>
+        public bool SaveCampus(W_Campus Model, int AccountID, int System_Station_ID)
+        {
+
+            if (Model.ID > 0)//修改
+            {
+                ///判断数据是否存在
+                W_Campus model = Orm.Single<W_Campus>(x => x.ID == Model.ID && x.System_Station_ID == System_Station_ID);
+                if (model == null)
+                {
+                    throw new ApiException("操作失败，未找到对应的数据！");
+                }
+                Model.System_Station_ID = model.System_Station_ID;
+                Model.AddPerson = model.AddPerson;
+                Model.AddTime = model.AddTime;
+                Model.Valid = model.Valid;
+                if (Orm.Update(Model) > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else//添加
+            {
+                Model.AddPerson = AccountID;
+                Model.AddTime = DateTime.Now;
+                Model.Valid = 1;
+                Model.System_Station_ID = System_Station_ID;
+                if (Orm.Insert(Model) > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+    }
+}

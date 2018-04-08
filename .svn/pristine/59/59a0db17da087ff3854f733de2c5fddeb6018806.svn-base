@@ -1,0 +1,67 @@
+﻿using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.ViewModel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Http;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class CourseInterlocutionController : StationBaseApiController
+    {
+        CourseInterlocutionMapper mapper = new CourseInterlocutionMapper();
+        /// <summary>
+        /// 查询所有问答列表 by nht 2017-08-16
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetInterlocutionListByCuId([FromUri]CampusModel model)
+        {
+            return Success(mapper.GetInterlocutionListByCuId(model, this.System_Station_ID), model.PageIndex == 1 ? mapper.GetInterlocutionListByCuIdCount(model, this.System_Station_ID) : 0);
+        }
+
+        /// <summary>
+        /// 删除问答 by nht 2017-08-16
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteCourseInterlocution(CampusModel model)
+        {
+            return Success(mapper.DeleteCourseInterlocution(model));
+        }
+
+        /// <summary>
+        /// 查询问答列表 by nht 2017-08-16
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetCourseInterlocutionList(int PID)
+        {
+            return Success(mapper.GetCourseInterlocutionList(PID, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 查询评论列表 by nht 2017-08-16
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetCourseCommentList([FromUri]CampusModel model)
+        {
+            return Success(mapper.GetCourseCommentList(model), model.PageIndex == 1 ? mapper.GetCourseCommentListCount(model) : 0);
+        }
+
+        /// <summary>
+        /// 删除评论
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteCourseComment(CampusModel model)
+        {
+            return Success(mapper.DeleteCourseComment(model));
+        }
+    }
+}

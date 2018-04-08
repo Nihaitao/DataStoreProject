@@ -1,0 +1,202 @@
+﻿using DataStoreProject.Model.ViewModel;
+using ServiceStack.DataAnnotations;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataStoreProject.Model.Entity.Chapters
+{
+    public class W_CourseModel:PageModel
+    {
+
+        /// <summary>
+        /// 网络课程表
+        /// </summary>
+        public int ID { set; get; }
+
+
+        /// <summary>
+        /// 网课名称
+        /// </summary>
+        public string Name { set; get; }
+
+
+        /// <summary>
+        /// 科次id  最后一个节点id
+        /// </summary>
+        public int Discipline_ID { set; get; }
+
+        /// <summary>
+        /// 学科名称
+        /// </summary>
+        public string Discipline_Name { set; get; }
+
+        /// <summary>
+        /// 价格 定价
+        /// </summary>
+        public decimal Price { set; get; }
+
+
+        /// <summary>
+        /// 优惠价
+        /// </summary>
+        public decimal PreferentialPrice { set; get; }
+
+
+        /// <summary>
+        /// 购买基数
+        /// </summary>
+        public int BuyBase { set; get; }
+
+        /// <summary>
+        /// 总课时
+        /// </summary>
+        public int TotalHours { set; get; }
+
+        /// <summary>
+        /// 授课方式 1录播 2直播 3面授
+        /// </summary>
+        public int TeachingMethod { set; get; }
+
+
+        /// <summary>
+        /// 授课方式  1录播 2直播 3面授
+        /// </summary>
+        public string TeachingMethod_Name
+        {
+            get
+            {
+                string Name = string.Empty;
+                switch (TeachingMethod)
+                {
+                    case 1: Name = "录播"; break;
+                    case 2: Name = "直播"; break;
+                    case 3: Name = "面授"; break;
+                }
+                return Name;
+
+            }
+        }
+
+
+        /// <summary>
+        /// 是否推荐 1推荐 0不推荐
+        /// </summary>
+        public int IsRecommend { set; get; }
+
+
+        /// <summary>
+        /// 是否上架  1上架 0下架
+        /// </summary>
+        public int IsPutaway { set; get; }
+
+
+        /// <summary>
+        /// 封面
+        /// </summary>
+        public string CoverPath { set; get; }
+
+
+        /// <summary>
+        /// 教师明细id
+        /// </summary>
+        public int TeacherDetail_ID { set; get; }
+
+        /// <summary>
+        /// 教师明细名称
+        /// </summary>
+        public string TeacherDetail_Name { set; get; }
+
+
+
+        /// <summary>
+        /// 介绍
+        /// </summary>
+        public string Description { set; get; }
+
+
+        /// <summary>
+        /// 课程详情
+        /// </summary>
+        public string Particulars { set; get; }
+
+
+        /// <summary>
+        /// 系统id
+        /// </summary>
+        public int System_Station_ID { set; get; }
+
+        /// <summary>
+        /// 添加时间
+        /// </summary>
+        public DateTime AddTime { set; get; }
+
+
+        /// <summary>
+        /// 操作人
+        /// </summary>
+        public int AddPerson { set; get; }
+
+        /// <summary>
+        /// 操作人名称
+        /// </summary>
+        public string AddPersonName { set; get; }
+        /// <summary>
+        /// 禁用启用  1启用 0禁用
+        /// </summary>
+        public int Valid { set; get; }
+
+        /// <summary>
+        /// 一级学科ID
+        /// </summary>
+        public int Discipline_OneLevelID { set; get; }
+
+        /// <summary>
+        /// 二级学科ID
+        /// </summary>
+        public int Discipline_TwoLevelID { set; get; }
+
+        /// <summary>
+        /// 三级学科ID
+        /// </summary>
+        public int Discipline_ThreeLevelID { set; get; }
+
+        /// <summary>
+        /// 学生id
+        /// </summary>
+        public string StuID { set; get; }
+
+
+        /// <summary>
+        /// 是否购买 0未购买 大于或等于1购买
+        /// </summary>
+        public int IsPay { set; get; }
+
+        /// <summary>
+        /// 是否可试听
+        /// </summary>
+        public int IsShiT { set; get; }
+        
+
+        /// <summary>
+        /// 对应课程数量
+        /// </summary>
+        public int CourseCount { set; get; }
+
+
+
+        /// <summary>
+        /// 购买数量 学生人数
+        /// </summary>
+        [AutoIncrement]
+        public int BuyCount { set; get; }
+
+        /// <summary>
+        /// 职称
+        /// </summary>
+        public string JobTitle { set; get; }
+
+    }
+}

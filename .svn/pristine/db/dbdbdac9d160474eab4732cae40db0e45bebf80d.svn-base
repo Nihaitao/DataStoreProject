@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="QuestionMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="GetOrderListTotalCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetOrderList_Fragment"></include>
+    </select>
+    <select id="GetOrderList" resultClass="DataStoreProject.Model.ViewModel.OrderSearch" parameterClass="map">
+      select a.Name,a.CardNumber,w.ID,w.OrderNo,w.Price,w.PayPrice,w.PayStatus,w.PayTime,w.PayType,w.OrderState,
+      (select COUNT(od.ID) from w_order_detail od where od.CID=w.ID) as PayCount
+      <include refid ="GetOrderList_Fragment"></include>
+    </select>
+
+    <sql id="GetOrderList_Fragment">
+      from w_order w
+      LEFT JOIN s_studentinfo a on w.StuId=a.StuId
+      LEFT JOIN s_studentinfo_station b on a.StuId=b.StuID and b.System_Station_ID=w.System_Station_ID and w.OrderState = 0
+      where 1=1 and  w.System_Station_ID = #System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="PayType">
+        w.PayType = #PayType#
+      </isGreaterThan>
+      <isGreaterThan compareValue="-1" prepend="and" property="PayStatus">
+        w.PayStatus = #PayStatus#
+      </isGreaterThan>
+      <isNotEmpty prepend="and" property="Name">
+        a.Name like concat('%',#Name#,'%')
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="CardNumber">
+        a.CardNumber like concat('%',#CardNumber#,'%')
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="OrderNo">
+        a.OrderNo like concat('%',#OrderNo#,'%')
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="PayStartTime">
+        <![CDATA[ w.PayTime >= #PayStartTime#]]>
+      </isNotEmpty>
+      <isNotEmpty prepend="and" property="PayEndTime">
+        <![CDATA[ w.PayTime <= #PayEndTime#]]>
+      </isNotEmpty>
+      order by w.PayTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetOrderDetailListByStuIdCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="GetOrderDetailListByStuId_Fragment"></include>
+    </select>
+    <select id="GetOrderDetailListByStuId" resultClass="DataStoreProject.Model.ViewModel.OrderStudentModel" parameterClass="map">
+      select o.ID,o.OrderNo,o.PayPrice,o.PayTime,o.PayStatus,o.PayType,o.OrderState,o.Price,
+      (select COUNT(od.ID) from w_order_detail od where od.CID=o.ID) as PayCount
+      <include refid ="GetOrderDetailListByStuId_Fragment"></include>
+    </select>
+
+    <sql id="GetOrderDetailListByStuId_Fragment">
+      from w_order o
+      left join s_studentinfo a on a.StuId=o.StuId
+      where o.StuId=#StuId# and o.OrderState = 0 and o.System_Station_ID =#System_Station_ID#
+      <isGreaterThan compareValue="-1" prepend="and" property="PayStatus">
+        o.PayStatus=#PayStatus#
+      </isGreaterThan>
+      order by o.PayTime desc
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+
+    <select id="GetShoppingCar" resultClass="map" parameterClass="map">
+      select a.*,(select ti.Name from t_teacherinfo_detail as t inner JOIN t_teacherinfo ti on t.Teacher_ID=ti.ID where t.ID=a.TeacherDetail_ID) as TeacherDetail_Name from W_Course a where a.ID in (select Course_ID from w_shoppingcar where Student_ID = #stuId#)
+    </select>
+
+    <delete id="MoveOutShoppingCar"  parameterClass="map">
+      delete from w_shoppingcar where Course_ID = #Course_ID# and Student_ID = #stuId#
+    </delete>
+    <delete id="ClearShoppingCar"  parameterClass="map">
+      delete from w_shoppingcar where Student_ID = #stuId#
+    </delete>
+   
+  </statements>
+</sqlMap>

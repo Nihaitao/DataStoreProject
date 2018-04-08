@@ -1,0 +1,197 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.Entity.Chapters;
+using DataStoreProject.Model.Entity.Question;
+using DataStoreProject.Model.Entity.ExamPaper;
+using DataStoreProject.Model.ViewModel;
+
+namespace DataStoreProject.Business
+{
+    public class ChapterMapper : BaseMapper
+    {
+
+        public IList GetChapterList(int QuestionStore_ID)
+        {
+            return QueryForList("selectChapter", new { QuestionStore_ID = QuestionStore_ID });
+        }
+
+        public bool AddChapter(W_Chapter model)
+        {
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+
+                var id = session.Insert(model);
+                if (id > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool UpdateChapter(W_Chapter model)
+        {
+            if (model == null)
+            {
+                throw new ApiException("对象错误");
+                //当出现异常后，可以直接抛ApiException，拦截器将会拦截异常，并格式化输出
+            }
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+                var id = session.Update(model);
+                if (id > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        public bool DeleteChapter(int ID)
+        {
+            using (var session = OpenOrmSession()) //使用using 数据库自动释放
+            {
+                var id = session.Delete<W_Chapter>(x => x.ID == ID);
+                if (id > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public dynamic Enabledisable(int ID, int Valid)
+        {
+            if (Valid == 1)
+            {
+                return Orm.Update<W_Chapter>(new W_Chapter()
+                 {
+                     Valid = 0,
+                     ID = ID
+                 });
+            }
+            else
+            {
+                return Orm.Update<W_Chapter>(new W_Chapter()
+                {
+                    Valid = 1,
+                    ID = ID
+                });
+            }
+        }
+
+        /// <summary>
+        /// 章节选择题目
+        /// </summary>
+        /// <param name="charpterId"></param>
+        /// <param name="questionIds"></param>
+        /// <returns></returns>
+        public bool CheckChapterQuestion(int chapterId, string questionIds)
+        {
+            SqlMapper.BeginTransaction();
+            string[] questionIdList = questionIds.Split(',');
+            try
+            {
+                foreach (string questionId in questionIdList)
+                {
+                    Orm.Insert<W_ChapterQuestion>(new W_ChapterQuestion()
+                    {
+                        Chapter_ID = chapterId,
+                        Question_ID = int.Parse(questionId)
+                    });
+                }
+                SqlMapper.CommitTransaction();
+            }
+            catch
+            {
+                SqlMapper.RollBackTransaction();
+                return false;
+            }
+            return true;
+        }
+
+
+        /// <summary>
+        /// 获取章节信息以及章节题目数量
+        /// </summary>
+        /// <param name="storeId"></param>
+        /// <returns></returns>
+        public IList GetChapterQuestion(int storeId)
+        {
+            return QueryForList("GetChapterQuestion", new { storeId });
+        }
+
+        /// <summary>
+        /// 根据章节ID获取学生章节做题情况
+        /// </summary>
+        /// <param name="charpterId"></param>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        public IList GetStudentCharpterPractice(int charpterId, string stuId)
+        {
+            return QueryForList("GetStudentCharpterPractice", new { charpterId, stuId });
+        }
+
+        /// <summary>
+        /// 创建章节练习
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public PracticeModel CreateCharpterPractice(W_ChapterPractice model, int charpterId, int questionType, int questionCount, int questionSource)
+        {
+            //第一步，创建章节练习表W_ChapterPractice
+            W_Chapter chapter = Orm.Select<W_Chapter>(x=>x.ID == charpterId).FirstOrDefault();
+            model.Title = chapter != null ? chapter.Name + model.AddTime.ToString("yyyy-MM-dd hh:mm") : "未知练习";
+            int practiceId = (int)Orm.Insert<W_ChapterPractice>(model, true);
+            //第二步，创建明细表w_chapterpractice_detail
+            IList<Question> list = SqlMapper.QueryForList<Question>("GetCharpterPracticeQuestion", new { charpterId, questionType, questionCount, questionSource, stuId = model.StuId });
+            foreach (Question q in list) 
+            {
+                Orm.Insert<W_ChapterPracticeDetail>(new W_ChapterPracticeDetail()
+                {
+                    ChapterPractice_ID = practiceId,
+                    Question_ID = q.ID
+                });
+            }
+            // 第三步，创建学生做题记录主表，保存开始做题时间
+            W_DoExamResult result = new W_DoExamResult();
+            result.StuId = model.StuId;
+            result.BusType = 1;//章节练习
+            result.BusID = practiceId;
+            result.BeginTime = model.AddTime;
+            int resultId = (int)Orm.Insert<W_DoExamResult>(result, true);
+
+            PracticeModel rtn = new PracticeModel();
+            rtn.practiceId = practiceId;
+            rtn.resultId = resultId;
+            rtn.list = list.ToList();
+            return rtn;
+        }
+
+
+        public string SubmitPractice(PracticeModel model, string stuId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string GetPracticeInfo(int busType, int busId, string p)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}

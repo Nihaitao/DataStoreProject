@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="DemoMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="selectDatainfoList" resultClass="map" parameterClass="map">
+      SELECT d.*,h.`Name` as AddPersonName
+      <include refid ="selectDatainfo_Fragment"></include>
+    </select>
+
+    <select id="selectDatainfoCount" resultClass="int" parameterClass="map">
+      select count(1)
+      <include refid ="selectDatainfo_Fragment"></include>
+    </select>
+    <sql id="selectDatainfo_Fragment">
+      from w_datainfo d LEFT JOIN h_station_account h on d.AddPerson=h.Account_ID
+      where d.System_Station_ID=#System_Station_ID# and BusType = 0 and BusID = #Course_ID#
+      <isEqual property="pageStatus" compareValue="1">
+        limit #pageIndex#, #pageSize#
+      </isEqual>
+    </sql>
+  </statements>
+</sqlMap>

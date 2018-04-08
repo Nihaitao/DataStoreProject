@@ -1,0 +1,129 @@
+﻿using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.Order;
+using DataStoreProject.Model.ViewModel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Http;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class OrderController : StationBaseApiController
+    {
+        OrderSerchMapper mapper = new OrderSerchMapper();
+        /// <summary>
+        /// 某机构开课列表 
+        /// </summary>
+        /// <modify>by nht 2017-11-27</modify>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetOrderList([FromUri]OrderSearch model)
+        {
+            return Success(mapper.GetOrderList(model, this.System_Station_ID), model.PageIndex == 1 ? mapper.GetOrderListTotalCount(model, this.System_Station_ID) : 0);
+        }
+        /// <summary>
+        /// 学生开课数据录入
+        /// </summary>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddOrderStudent(OrderModel order)
+        {
+            return Success(mapper.AddOrderStudent(order,this.System_Station_ID,this.StuId));
+        }
+
+        /// <summary>
+        /// 删除订单课程
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteOrderCourse(CampusModel model)
+        {
+            return Success(mapper.DeleteOrderCourse(model));
+        }
+
+        /// <summary>
+        /// 批量删除订单课程 hx add 2018-01-12
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic DeleteOrderCourseByCID(CampusModel model)
+        {
+            return Success(mapper.DeleteOrderCourseByCID(model));
+        }
+
+        /// <summary>
+        /// 某学生订单列表数据 
+        /// </summary>
+        /// <returns></returns>
+        //[HttpGet]
+        //public dynamic GetOrderDetailListByStuId([FromUri]CampusModel model)
+        //{
+        //    return Success(mapper.GetOrderDetailListByStuId(model, this.StuId, this.System_Station_ID), model.PageIndex == 1 ? mapper.GetOrderDetailListByStuIdCount(model, this.StuId, this.System_Station_ID) : 0);
+        //}
+
+        /// <summary>
+        /// 获取购物车内课程信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetShoppingCar()
+        {
+            return Success(mapper.GetShoppingCar(this.StuId));
+        }
+
+        /// <summary>
+        /// 从购物车移除   
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic MoveOutShoppingCar(CampusModel model)
+        {
+            return Success(mapper.MoveOutShoppingCar(model,this.StuId));
+        }
+
+        /// <summary>
+        /// 购物车生成订单 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic AddOrderFromShoppingCar()
+        {
+            return Success(mapper.AddOrderFromShoppingCar(this.StuId, this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 某学生订单列表数据 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetOrderDetailListByStuId([FromUri]CampusModel model,int PayStatus = -1)
+        {
+            string stuID = string.IsNullOrEmpty(model.StuId) ? this.StuId : model.StuId;
+            var dict = mapper.GetOrderDetailListByStuId(model, stuID, this.System_Station_ID, PayStatus);
+            return Success(dict, model.PageIndex == 1 ? mapper.GetOrderDetailListByStuId_TotalCount(model, stuID, this.System_Station_ID, PayStatus) : 0);
+        }
+
+        /// <summary>
+        /// 查看订单明细列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetOrderDetailList(int orderId)
+        {
+            return Success(mapper.GetOrderDetailList(orderId));
+        }
+
+        /// <summary>
+        /// 我的课程列表 
+        /// 次方法只撰写了录播
+        /// </summary>
+        [HttpGet]
+        public dynamic GetOrderListByCourse([FromUri]CampusModel model)
+        {
+            return Success(mapper.GetOrderListByCourse(model, this.StuId, this.System_Station_ID));
+        }
+    }
+}

@@ -1,0 +1,74 @@
+﻿using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.HConfiguration;
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
+using System.Web;
+using System.Web.Http;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class HConfigurationController : StationBaseApiController
+    {
+        HConfigurationMapper mapper = new HConfigurationMapper();
+        /// <summary>
+        /// 获取本站点学员设置的数据[系统配置通用] huangcuiju 20170812
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetConfiguration()
+        {
+            return Success(mapper.GetConfigurationByStationID(this.System_Station_ID));
+        }
+
+
+        /// <summary>
+        /// 学员设置 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetConfiguration([FromUri]H_Configuration model)
+        {
+            H_Configuration ret = mapper.GetConfigurationByStationID(this.System_Station_ID);
+            if (ret == null)  //添加
+            {
+                return Success(mapper.InsertConfiguration(model, this.System_Station_ID));
+
+            }
+            else  //修改
+            {
+                return Success(mapper.UpdateConfiguration(model,this.System_Station_ID));
+            }
+        }
+
+        /// <summary>
+        /// 获取本站点课程设置的数据[系统配置通用] 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetWConfiguration()
+        {
+            return Success(mapper.GetWConfiguration(this.System_Station_ID));
+        }
+
+        /// <summary>
+        /// 课程设置 
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetWConfiguration(W_Configuration model)
+        {
+            W_Configuration ret = mapper.GetWConfiguration(this.System_Station_ID);
+            if (ret == null)  //添加
+            {
+                return Success(mapper.InsertWConfiguration(model, this.System_Station_ID));
+            }
+            else  //修改
+            {
+                return Success(mapper.UpdateWConfiguration(model, this.System_Station_ID));
+            }
+        }
+    }
+}

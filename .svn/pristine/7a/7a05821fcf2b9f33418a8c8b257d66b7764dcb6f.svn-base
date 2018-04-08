@@ -1,0 +1,34 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.Entity.DataInfo;
+
+namespace DataStoreProject.Business
+{
+    public class CollectionMapper : BaseMapper
+    {
+
+        public IList GetCollectionList(int BusType, string StuID)
+        {
+            
+            return QueryForList("selectCollection", new { BusType = BusType, StuID = StuID });
+        }
+
+        public bool AddCollection(W_Collection model)
+        {
+
+            List<W_Collection> list = Orm.Select<W_Collection>(x => x.BusType == model.BusType & x.BusID == model.BusID && x.StuID == model.StuID).ToList();
+            if (list.Count == 0)
+                return Orm.Insert(model) > 0;
+            else
+                return Orm.Delete<W_Collection>(list) > 0;
+        }
+       
+    }
+}

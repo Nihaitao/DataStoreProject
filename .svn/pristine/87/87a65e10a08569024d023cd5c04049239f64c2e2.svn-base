@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<sqlMap namespace="DemoMapper" xmlns="http://ibatis.apache.org/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <statements>
+    <select id="selectChapters" resultClass="map" parameterClass="map">
+      select * from w_collection
+      <dynamic prepend="where">
+        <isNotEmpty prepend="and" property="BusType">
+          `BusType`=#BusType#
+        </isNotEmpty>
+        <isNotEmpty prepend="and" property="StuID">
+          `StuID`=#StuID#
+        </isNotEmpty>
+      </dynamic>
+    </select>
+
+
+    <select id="GetCharptersQuestion" resultClass="map" parameterClass="map">
+      select Count(1) as Counts from w_chapters_question where Chapters_ID = #chapter#      
+    </select>
+  </statements>
+</sqlMap>

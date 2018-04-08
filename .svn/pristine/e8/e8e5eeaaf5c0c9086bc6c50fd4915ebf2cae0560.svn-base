@@ -1,0 +1,82 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataStoreProject.Model.ViewModel
+{
+    public class QuestionStoreRequest : PageModel
+    {
+        public QuestionStoreRequest() { Valid = -1; }
+        /// <summary>
+        /// 名称
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// 科次ID
+        /// </summary>
+        public int DisciplineId { get; set; }
+
+        /// <summary>
+        /// 启用/禁用
+        /// </summary>
+        public int Valid { get; set; }
+
+    }
+
+    public class ExamPagerRequest : PageModel
+    {
+        /// <summary>
+        /// 名称
+        /// </summary>
+        public string Title { get; set; }
+
+        /// <summary>
+        /// 题型
+        /// </summary>
+        public int Type { get; set; }
+
+        /// <summary>
+        /// 题库
+        /// </summary>
+        public int Store { get; set; }
+
+        /// <summary>
+        /// 组卷类型
+        /// </summary>
+        public int DoType { get; set; }
+        /// <summary>
+        /// 省份
+        /// </summary>
+        public int Province_ID { get; set; }
+
+
+    }
+
+    public class QuestionRequest : PageModel
+    {
+        /// <summary>
+        /// 名称
+        /// </summary>
+        public string Title { get; set; }
+
+        /// <summary>
+        /// 题型
+        /// </summary>
+        public int Type { get; set; }
+
+        /// <summary>
+        /// 题库
+        /// </summary>
+        public int Store { get; set; }
+
+        /// <summary>
+        /// 难度
+        /// </summary>
+        public int Level { get; set; }
+
+    }
+   
+}

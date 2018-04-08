@@ -1,0 +1,100 @@
+﻿using CT.Common.Mvc;
+using DataStoreProject.Business;
+using DataStoreProject.Model.Entity.Teacher;
+using DataStoreProject.Model.ViewModel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
+
+namespace DataStoreProject.Web.Controller
+{
+    public class TeacherController : StationBaseApiController
+    {
+        #region 老师控制器 hx 2018-01-08
+        TeacherMapper mapper = new TeacherMapper();
+
+        /// <summary>
+        /// 老师添加/修改
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SaveTeacher(TeacherModel model)
+        {
+            if (model == null) return Success("未传任何参数！");
+
+            var dict = false;
+
+            model.System_Station_ID = this.System_Station_ID;
+            model.AddTime = DateTime.Now;
+            model.AddPerson = this.AccountID;
+
+            if (model.ID == 0) //添加老师
+            {
+                model.Valid = 1;
+
+                dict = mapper.TeacherInsert(model);
+            }
+            else if (model.ID > 0) //修改老师
+            {
+                dict = mapper.TeacherUpdate(model);
+            }
+            return Success(dict);
+        }
+
+        /// <summary>
+        /// 根据详细ID 查询老师
+        /// </summary>
+        /// <param name="TeacherDetail_ID">老师详情ID</param>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetTeacherByID(int TeacherDetail_ID)
+        {
+            var dict = mapper.GetTeacherByID(TeacherDetail_ID, this.System_Station_ID);
+            return Success(dict);
+        }
+
+        /// <summary>
+        /// 删除老师 【只删除详细表数据，不删除主表数据】
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic RemoveTeacher(TeacherModel model)
+        {
+            if (model == null) return Success("未传任何参数！");
+            model.System_Station_ID = this.System_Station_ID;
+            var dict = mapper.RemoveTeacher(model);
+            return Success(dict);
+        }
+
+        /// <summary>
+        /// 老师状态：启用/禁用
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public dynamic SetTeacherValid(TeacherModel model)
+        {
+            if (model == null) return Success("未传任何参数！");
+            model.System_Station_ID = this.System_Station_ID;
+            var dict = mapper.SetTeacherValid(model);
+            return Success(dict);
+        }
+
+        /// <summary>
+        /// 获取机构所有老师列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public dynamic GetAllTeachers([FromUri]PageModel model, string Name = "", int? Valid = null, int Discipline_ID = 0)
+        {
+            var dict = mapper.GetAllTeachers(model, Name, Valid, Discipline_ID ,this.System_Station_ID);
+            return Success(dict, model.PageIndex == 1 ? mapper.GetAllTeachers_TotalCount(model, Name, Valid, Discipline_ID, this.System_Station_ID) : 0);
+        }
+        #endregion
+    }
+}

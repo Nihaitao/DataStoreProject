@@ -1,0 +1,43 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataStoreProject.Model.ViewModel
+{
+    public class OrderSearch:PageModel
+    {
+        public int ID { get; set; }
+        public string Name { get; set; }
+        public string CardNumber { get; set; }
+        public string OrderNo { get; set; }
+
+        public int PayStatus { get; set; }
+        public DateTime PayTime { get; set; }
+        public int PayType { get; set; }
+        public int System_Station_ID { get; set; }
+        public int StartRow { get; set; }
+        public int PageSize { get; set; }
+        public string SearchName { get; set; }
+        public decimal PayPrice { get; set; }
+        public string SearchValue { get; set; }
+        public string PayStartTime { get; set; }
+        public string PayEndTime { get; set; }
+        public int Valid { get; set; }
+        public int PayCount { get; set; }
+    }
+
+    public class PostModel
+    {
+        public bool ResultBool { get; set; }
+        public string Message { get; set; }
+        public DateTime PayTime { get; set; }
+        public string OrderId { get; set; }
+        public int PayType { get; set; }
+        public string PayLogId { get; set; }
+        public string OnlinePayId { get; set; }
+        public string PrepayId { get; set; }
+        public string TradeStatus { get; set; }
+    }
+}

@@ -1,0 +1,127 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CommonFramework.Exceptions;
+using CommonFramework.IBatisNet;
+using ServiceStack.OrmLite;
+using DataStoreProject.Model.Entity.DataInfo;
+using DataStoreProject.Model.ViewModel;
+using DataStoreProject.Model.Entity.Question;
+
+namespace DataStoreProject.Business
+{
+    public class CollectionMapper : BaseMapper
+    {
+
+        /// <summary>
+        /// 根据业务类型,学生主表ID获取对应收藏 （业务类型，0 试题 1 试卷） by SZF
+        /// </summary>
+        /// <param name="BusType">业务类型</param>
+        /// <param name="StuID">学生ID</param>
+        /// <returns></returns>
+        public List<Question> GetCollectionList(W_CollectionModel model, string StuID, int System_Station_ID)
+        {
+            List<Question> CollectionModel = SqlMapper.QueryForList<Question>("GetCollectionListByStuID", new { QuestionStore_ID = model.QuestionStore_ID, QuestionType_ID = model.QuestionType_ID, StuID = StuID, System_Station_ID = System_Station_ID, BusType = model.BusType, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+            List<W_QuestionNote> NoteModel = SqlMapper.QueryForList<W_QuestionNote>("GetQuestionListforNote", new { System_Station_ID = System_Station_ID, StuID = StuID }).ToList();
+            if (CollectionModel == null)
+            {
+                throw new ApiException("无添加任何收藏,请添加后再试");
+            }
+            foreach (var item in CollectionModel)
+            {
+                item.NoteList = NoteModel.FindAll(x => x.Question_ID == item.ID);
+            }
+            return CollectionModel;
+        }
+
+        /// <summary>
+        /// 根据业务类型,学生主表ID获取对应总条数
+        /// </summary>
+        /// <param name="BusType">业务类型</param>
+        /// <param name="StuID">学生ID</param>
+        /// <returns></returns>
+        public int GetCollectionListCount(W_CollectionModel model, string StuID, int System_Station_ID)
+        {
+            return SqlMapper.QueryForObject<int>("GetCollectionListByStuIDTotalCount", new { QuestionStore_ID = model.QuestionStore_ID, QuestionType_ID = model.QuestionType_ID, StuID = StuID, System_Station_ID = System_Station_ID, BusType = model.BusType, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 根据业务类型,学生主表ID获取对应笔记 
+        /// </summary>
+        /// <param name="BusType">业务类型</param>
+        /// <param name="StuID">学生ID</param>
+        /// <returns></returns>
+        public dynamic GetNoteList(W_CollectionModel model, string StuID, int System_Station_ID)
+        {
+            List<Question> QuestionModel = SqlMapper.QueryForList<Question>("GetNoteListByStuID", new { QuestionStore_ID = model.QuestionStore_ID, QuestionType_ID = model.QuestionType_ID, StuID = StuID, System_Station_ID = System_Station_ID, pageIndex = (model.PageIndex - 1) * model.PageSize, pageSize = model.PageSize, pageStatus = model.PageStatus }).ToList();
+            List<W_QuestionNote> NoteModel = SqlMapper.QueryForList<W_QuestionNote>("GetQuestionListforNote", new { System_Station_ID = System_Station_ID, StuID = StuID }).ToList();
+            if (QuestionModel == null)
+            {
+                throw new ApiException("无添加笔记，请添加后再试");
+            }
+            foreach (var item in QuestionModel)
+            {
+                item.NoteList = NoteModel.FindAll(x => x.Question_ID == item.ID);
+            }
+            return QuestionModel;
+        }
+
+        /// <summary>
+        /// 根据业务类型,学生主表ID获取对应笔记总条数
+        /// </summary>
+        /// <param name="BusType">业务类型</param>
+        /// <param name="StuID">学生ID</param>
+        /// <returns></returns>
+        public int GetNoteListCount(W_CollectionModel model, string StuID, int System_Station_ID)
+        {
+            return SqlMapper.QueryForObject<int>("GetNoteListByStuIDTotalCount", new { QuestionStore_ID = model.QuestionStore_ID, QuestionType_ID = model.QuestionType_ID, StuID = StuID, System_Station_ID = System_Station_ID, pageStatus = 0 });
+        }
+
+        /// <summary>
+        /// 添加收藏/取消收藏
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool AddCollection(W_Collection model)
+        {
+
+            W_Collection CollectionModel = Orm.Single<W_Collection>(x => x.BusType == model.BusType & x.BusID == model.BusID && x.StuID == model.StuID);
+            if (CollectionModel == null)
+                return Orm.Insert(model) > 0;
+            else
+                return Orm.Delete<W_Collection>(x=>x.BusID==model.BusID && x.StuID==model.StuID &&x.BusType==model.BusType) > 0;
+        }
+        
+        /// <summary>
+        /// 删除题目下面所有的笔记
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool DeleteAllNote(W_QuestionNote model, string StuId)
+        {
+            if (model.Question_ID == 0) 
+            {
+                throw new ApiException("无效参数");
+            }
+            return SqlMapper.Delete("DeleteAllNote", new { Question_ID = model.Question_ID, StuId = StuId }) > 0;
+        }
+
+        /// <summary>
+        /// 修改笔记
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool UpdateNoteByID(W_QuestionNote model, string StuId)
+        {
+            if (model.ID <= 0) 
+            {
+                throw new ApiException("无效参数");
+            }
+            return SqlMapper.Update("UpdateNoteByID", new { ID = model.ID, Remart = model.Remart, StuId = StuId }) > 0;
+        }
+       
+    }
+}
